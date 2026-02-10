@@ -73,18 +73,22 @@ jobs:
 
       - name: Extract changelog section
         id: changelog
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          VERSION=${{ steps.version.outputs.version }}
           python << 'EOF'
           import re
-          
+          import os
+
+          VERSION = os.environ['VERSION']
+
           with open('CHANGELOG.md', 'r') as f:
               content = f.read()
-          
+
           # Find the section for this version
           pattern = rf"## \[{re.escape(VERSION)}\].*?(?=## \[|$)"
           match = re.search(pattern, content, re.DOTALL)
-          
+
           if match:
               section = match.group(0)
               # Remove the header line
@@ -95,7 +99,7 @@ jobs:
               changelog = '\n'.join(lines).strip()
           else:
               changelog = "See CHANGELOG.md for details"
-          
+
           # Write to file for use in next step
           with open('/tmp/changelog.txt', 'w') as f:
               f.write(changelog)
