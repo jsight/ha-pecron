@@ -11,7 +11,7 @@ CONF_REGION: Final = "region"
 CONF_REFRESH_INTERVAL: Final = "refresh_interval"
 
 # Defaults
-DEFAULT_REFRESH_INTERVAL: Final = 300  # 5 minutes in seconds
+DEFAULT_REFRESH_INTERVAL: Final = 600  # 10 minutes in seconds
 DEFAULT_REGION: Final = "US"
 
 # Supported regions

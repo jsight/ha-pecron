@@ -29,6 +29,11 @@ class PecronConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+    @staticmethod
+    def async_get_options_flow(config_entry):
+        """Get the options flow for this handler."""
+        return PecronOptionsFlow(config_entry)
+
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
@@ -66,6 +71,9 @@ class PecronConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_EMAIL): str,
                 vol.Required(CONF_PASSWORD): str,
                 vol.Optional(CONF_REGION, default=DEFAULT_REGION): vol.In(REGIONS),
+                vol.Optional(
+                    CONF_REFRESH_INTERVAL, default=DEFAULT_REFRESH_INTERVAL
+                ): vol.All(vol.Coerce(int), vol.Range(min=60, max=3600)),
             }
         )
 
@@ -92,6 +100,37 @@ class PecronConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if "authentication" in str(err).lower() or "401" in str(err):
                 raise PecronAuthError(str(err)) from err
             raise PecronConnectionError(str(err)) from err
+
+
+class PecronOptionsFlow(config_entries.OptionsFlow):
+    """Handle options flow for Pecron integration."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Manage the options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        current_refresh = self.config_entry.options.get(
+            CONF_REFRESH_INTERVAL,
+            self.config_entry.data.get(CONF_REFRESH_INTERVAL, DEFAULT_REFRESH_INTERVAL),
+        )
+
+        options_schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_REFRESH_INTERVAL,
+                    default=current_refresh,
+                ): vol.All(vol.Coerce(int), vol.Range(min=60, max=3600)),
+            }
+        )
+
+        return self.async_show_form(step_id="init", data_schema=options_schema)
 
 
 class PecronAuthError(HomeAssistantError):

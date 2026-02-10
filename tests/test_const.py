@@ -28,7 +28,7 @@ def test_config_keys() -> None:
 def test_defaults() -> None:
     """Test default values."""
     assert DEFAULT_REGION == "US"
-    assert DEFAULT_REFRESH_INTERVAL == 300
+    assert DEFAULT_REFRESH_INTERVAL == 600
     assert isinstance(DEFAULT_REFRESH_INTERVAL, int)
 
 
