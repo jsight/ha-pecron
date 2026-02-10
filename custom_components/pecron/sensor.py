@@ -102,18 +102,29 @@ async def async_setup_entry(
     """Set up sensors for Pecron."""
     coordinator: DataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
+    # Track which devices we've created entities for
+    known_device_keys: set[str] = set()
+
+    def create_sensors_for_device(device_key: str, device_data: dict) -> list:
+        """Create all sensor entities for a device."""
+        sensors = []
+        for sensor_desc in PECRON_SENSORS:
+            sensors.append(
+                PecronSensor(
+                    coordinator,
+                    device_key,
+                    device_data["device"],
+                    sensor_desc,
+                )
+            )
+        return sensors
+
+    # Create initial sensors
     sensors = []
     if coordinator.data is not None:
         for device_key, device_data in coordinator.data.items():
-            for sensor_desc in PECRON_SENSORS:
-                sensors.append(
-                    PecronSensor(
-                        coordinator,
-                        device_key,
-                        device_data["device"],
-                        sensor_desc,
-                    )
-                )
+            sensors.extend(create_sensors_for_device(device_key, device_data))
+            known_device_keys.add(device_key)
 
         if not sensors:
             _LOGGER.warning(
@@ -121,6 +132,27 @@ async def async_setup_entry(
             )
 
     async_add_entities(sensors)
+
+    # Add listener for new devices
+    def check_for_new_devices() -> None:
+        """Check for new devices and add entities for them."""
+        if not coordinator.data:
+            return
+
+        new_device_keys = set(coordinator.data.keys()) - known_device_keys
+        if new_device_keys:
+            _LOGGER.info("Adding sensors for %d new device(s)", len(new_device_keys))
+            new_sensors = []
+            for device_key in new_device_keys:
+                device_data = coordinator.data[device_key]
+                new_sensors.extend(create_sensors_for_device(device_key, device_data))
+                known_device_keys.add(device_key)
+
+            if new_sensors:
+                async_add_entities(new_sensors)
+
+    # Register the listener
+    entry.async_on_unload(coordinator.async_add_listener(check_for_new_devices))
 
 
 class PecronSensor(CoordinatorEntity, SensorEntity):

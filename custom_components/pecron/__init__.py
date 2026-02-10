@@ -116,6 +116,7 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
         self.region = region
         self.api: PecronAPI | None = None
         self.devices = []
+        self.known_device_keys: set[str] = set()  # Track devices we've seen
 
         super().__init__(
             hass,
@@ -202,10 +203,29 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
 
         if data:
             _LOGGER.debug("Successfully fetched data for %d device(s)", len(data))
+            # Check for new devices
+            new_device_keys = set(data.keys()) - self.known_device_keys
+            if new_device_keys:
+                _LOGGER.info(
+                    "Discovered %d new device(s): %s",
+                    len(new_device_keys),
+                    new_device_keys,
+                )
+                self.known_device_keys.update(new_device_keys)
         else:
             _LOGGER.warning("No device data could be fetched")
 
         return data
+
+    def get_new_devices(self, existing_keys: set[str]) -> dict:
+        """Get devices that are new since the given set of keys."""
+        if not self.data:
+            return {}
+        return {
+            key: value
+            for key, value in self.data.items()
+            if key not in existing_keys
+        }
 
     async def async_shutdown(self) -> None:
         """Shutdown the coordinator and close API connection."""
