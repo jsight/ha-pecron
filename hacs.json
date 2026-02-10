@@ -1,0 +1,8 @@
+{
+  "name": "Pecron",
+  "homeassistant": "2024.1.0",
+  "documentation": "https://github.com/jsightler/ha-pecron",
+  "issues": "https://github.com/jsightler/ha-pecron/issues",
+  "requirements": [],
+  "category": "integration"
+}

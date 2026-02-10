@@ -1,0 +1,72 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Pecron Account",
+        "description": "Enter your Pecron account credentials",
+        "data": {
+          "email": "Email",
+          "password": "Password",
+          "region": "Region"
+        }
+      },
+      "advanced": {
+        "title": "Advanced Options",
+        "description": "Configure polling and other advanced settings",
+        "data": {
+          "refresh_interval": "Refresh interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid email or password",
+      "cannot_connect": "Failed to connect to Pecron API",
+      "unknown": "An unknown error occurred"
+    },
+    "abort": {
+      "already_configured": "Pecron is already configured"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_percentage": {
+        "name": "Battery percentage"
+      },
+      "total_input_power": {
+        "name": "Input power"
+      },
+      "total_output_power": {
+        "name": "Output power"
+      },
+      "remaining_charging_time": {
+        "name": "Time to full"
+      },
+      "remaining_discharging_time": {
+        "name": "Time to empty"
+      },
+      "ac_output_voltage": {
+        "name": "AC output voltage"
+      },
+      "ac_output_power": {
+        "name": "AC output power"
+      },
+      "ac_output_frequency": {
+        "name": "AC output frequency"
+      }
+    },
+    "binary_sensor": {
+      "ac_switch": {
+        "name": "AC output"
+      },
+      "dc_switch": {
+        "name": "DC output"
+      },
+      "ups_status": {
+        "name": "UPS mode"
+      },
+      "online": {
+        "name": "Online"
+      }
+    }
+  }
+}
