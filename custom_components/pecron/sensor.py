@@ -103,7 +103,7 @@ async def async_setup_entry(
     coordinator: DataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     sensors = []
-    if coordinator.data:
+    if coordinator.data is not None:
         for device_key, device_data in coordinator.data.items():
             for sensor_desc in PECRON_SENSORS:
                 sensors.append(
@@ -114,6 +114,11 @@ async def async_setup_entry(
                         sensor_desc,
                     )
                 )
+
+        if not sensors:
+            _LOGGER.warning(
+                "No Pecron devices with valid data found. Check that your account has devices and they are online."
+            )
 
     async_add_entities(sensors)
 

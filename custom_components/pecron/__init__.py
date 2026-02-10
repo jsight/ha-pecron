@@ -93,9 +93,26 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
     def _fetch_data(self) -> dict:
         """Fetch device data from API."""
         if self.api is None:
+            _LOGGER.info("Initializing Pecron API connection for region: %s", self.region)
             self.api = PecronAPI(region=self.region)
             self.api.login(self.email, self.password)
             self.devices = self.api.get_devices()
+            _LOGGER.info("Found %d Pecron device(s) on account", len(self.devices))
+
+            if not self.devices:
+                _LOGGER.warning(
+                    "No Pecron devices found on account %s. "
+                    "Please check that devices are registered in the Pecron app.",
+                    self.email
+                )
+            else:
+                for device in self.devices:
+                    _LOGGER.info(
+                        "Discovered device: %s (key: %s, product: %s)",
+                        device.device_name,
+                        device.device_key,
+                        getattr(device, "product_name", "unknown"),
+                    )
 
         data = {}
         for device in self.devices:
@@ -105,10 +122,24 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
                     "device": device,
                     "properties": props,
                 }
+                _LOGGER.debug(
+                    "Successfully fetched properties for %s: %s",
+                    device.device_name,
+                    props,
+                )
             except Exception as err:
                 _LOGGER.error(
-                    "Error fetching properties for %s: %s", device.device_name, err
+                    "Error fetching properties for %s (key: %s): %s",
+                    device.device_name,
+                    device.device_key,
+                    err,
+                    exc_info=True,
                 )
+
+        if data:
+            _LOGGER.debug("Successfully fetched data for %d device(s)", len(data))
+        else:
+            _LOGGER.warning("No device data could be fetched")
 
         return data
 
