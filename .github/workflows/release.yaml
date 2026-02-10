@@ -1,0 +1,117 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Validate Release
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
+
+      - name: Validate version format
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          if ! [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version format: $VERSION"
+            echo "Expected format: v0.0.0"
+            exit 1
+          fi
+          echo "✓ Version format valid: $VERSION"
+
+      - name: Validate manifest version
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          MANIFEST_VERSION=$(python -c "import json; print(json.load(open('custom_components/pecron/manifest.json')).get('version', ''))")
+          
+          if [ "$VERSION" != "$MANIFEST_VERSION" ]; then
+            echo "Version mismatch!"
+            echo "Tag version: $VERSION"
+            echo "Manifest version: $MANIFEST_VERSION"
+            exit 1
+          fi
+          echo "✓ Version matches manifest: $VERSION"
+
+      - name: Validate changelog entry
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          if ! grep -q "## \[$VERSION\]" CHANGELOG.md; then
+            echo "No changelog entry found for version $VERSION"
+            echo "Please add a section in CHANGELOG.md for this release"
+            exit 1
+          fi
+          echo "✓ Changelog entry found"
+
+  create-release:
+    needs: validate
+    runs-on: ubuntu-latest
+    name: Create GitHub Release
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
+
+      - name: Extract changelog section
+        id: changelog
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          python << 'EOF'
+          import re
+          
+          with open('CHANGELOG.md', 'r') as f:
+              content = f.read()
+          
+          # Find the section for this version
+          pattern = rf"## \[{re.escape(VERSION)}\].*?(?=## \[|$)"
+          match = re.search(pattern, content, re.DOTALL)
+          
+          if match:
+              section = match.group(0)
+              # Remove the header line
+              lines = section.split('\n')[1:]
+              # Remove trailing blank lines
+              while lines and not lines[-1].strip():
+                  lines.pop()
+              changelog = '\n'.join(lines).strip()
+          else:
+              changelog = "See CHANGELOG.md for details"
+          
+          # Write to file for use in next step
+          with open('/tmp/changelog.txt', 'w') as f:
+              f.write(changelog)
+          EOF
+          cat /tmp/changelog.txt
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.version.outputs.tag }}
+          name: "v${{ steps.version.outputs.version }}"
+          bodyFile: /tmp/changelog.txt
+          draft: false
+          prerelease: false
+
+      - name: Release notification
+        run: |
+          echo "✓ Release created: ${{ steps.version.outputs.tag }}"
+          echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}"
