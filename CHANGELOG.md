@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-02-10
+
+### Fixed
+- Fixed AttributeError in options flow when accessing integration options
+- Removed unnecessary `__init__` override in `PecronOptionsFlow` that was trying to set read-only `config_entry` property
+
+## [0.2.0] - 2026-02-10
+
+### Added
+- Dynamic device discovery - new devices automatically detected without HA restart
+- Configurable refresh interval (1-60 minutes, default: 10 minutes)
+- Options flow to change refresh interval after initial setup
+- Comprehensive logging for device discovery and data fetching
+- Property name validation and debugging
+- Retry logic with exponential backoff for initial data fetch
+- Persistent notifications for connection issues and missing devices
+- Better error differentiation (auth vs connection vs data errors)
+
+### Fixed
+- Critical bug where empty dict check prevented entity creation
+- Entity descriptions now properly inherit from Home Assistant base classes
+- Property validation warnings for missing attributes
+
+### Changed
+- Default refresh interval increased from 5 to 10 minutes (reduces API load)
+- Integration automatically reloads when refresh interval is changed
+
 ## [0.1.0] - 2026-02-09
 
 ### Added
