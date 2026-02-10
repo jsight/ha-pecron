@@ -45,7 +45,6 @@ ignore = [
 
 [tool.ruff.lint.isort]
 profile = "black"
-line-length = 100
 known-first-party = ["custom_components"]
 
 [tool.mypy]
