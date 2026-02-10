@@ -166,7 +166,17 @@ class PecronSensor(CoordinatorEntity, SensorEntity):
             return None
 
         props = self.coordinator.data[self._device_key]["properties"]
-        return getattr(props, self.entity_description.key, None)
+        value = getattr(props, self.entity_description.key, None)
+
+        if value is None and not hasattr(props, self.entity_description.key):
+            _LOGGER.debug(
+                "Property '%s' not found for device %s. Available: %s",
+                self.entity_description.key,
+                self._device.device_name,
+                dir(props) if hasattr(props, "__dir__") else "unknown",
+            )
+
+        return value
 
     @callback
     def _handle_coordinator_update(self) -> None:

@@ -146,6 +146,15 @@ class PecronBinarySensor(CoordinatorEntity, BinarySensorEntity):
         # Get from properties
         props = data["properties"]
         value = getattr(props, self.entity_description.key, None)
+
+        if value is None and not hasattr(props, self.entity_description.key):
+            _LOGGER.debug(
+                "Property '%s' not found for device %s. Available: %s",
+                self.entity_description.key,
+                data["device"].device_name,
+                dir(props) if hasattr(props, "__dir__") else "unknown",
+            )
+
         return value
 
     @property

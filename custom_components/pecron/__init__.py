@@ -127,6 +127,19 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
                     device.device_name,
                     props,
                 )
+                # Log available property attributes for debugging/validation
+                if hasattr(props, "__dict__"):
+                    _LOGGER.debug(
+                        "Available properties for %s: %s",
+                        device.device_name,
+                        list(props.__dict__.keys()),
+                    )
+                else:
+                    _LOGGER.debug(
+                        "Property attributes for %s: %s",
+                        device.device_name,
+                        dir(props),
+                    )
             except Exception as err:
                 _LOGGER.error(
                     "Error fetching properties for %s (key: %s): %s",
