@@ -16,7 +16,7 @@ A Home Assistant community integration for Pecron portable power stations. Monit
 ### Via HACS
 
 1. Go to **HACS** → **Integrations** → **Custom repositories**
-2. Add this repository: `https://github.com/jsightler/ha-pecron`
+2. Add this repository: `https://github.com/jsight/ha-pecron`
 3. Select **Pecron** and click **Install**
 4. Restart Home Assistant
 5. Go to **Settings** → **Devices & Services** → **Create Integration**
@@ -25,7 +25,7 @@ A Home Assistant community integration for Pecron portable power stations. Monit
 ### Manual
 
 ```bash
-git clone https://github.com/jsightler/ha-pecron.git
+git clone https://github.com/jsight/ha-pecron.git
 cp -r ha-pecron/custom_components/pecron ~/.homeassistant/custom_components/
 # Restart Home Assistant
 ```
