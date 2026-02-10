@@ -3,11 +3,11 @@
   "domain": "pecron",
   "name": "Pecron",
   "codeowners": [
-    "@jsightler"
+    "@jsight"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/jsightler/ha-pecron",
-  "issue_tracker": "https://github.com/jsightler/ha-pecron/issues",
+  "documentation": "https://github.com/jsight/ha-pecron",
+  "issue_tracker": "https://github.com/jsight/ha-pecron/issues",
   "requirements": [
     "unofficial-pecron-api==0.1.0"
   ],
