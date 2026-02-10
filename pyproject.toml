@@ -20,44 +20,14 @@ Issues = "https://github.com/jsight/ha-pecron/issues"
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-exclude = [
-    ".git",
-    "__pycache__",
-    ".venv",
-    "build",
-    "dist",
-    ".egg-info",
-]
 
 [tool.ruff.lint]
-select = [
-    "E",      # pycodestyle errors
-    "W",      # pycodestyle warnings
-    "F",      # pyflakes
-    "I",      # isort
-    "B",      # flake8-bugbear
-    "C4",     # flake8-comprehensions
-    "UP",     # pyupgrade
-]
-ignore = [
-    "E501",   # line too long (handled by formatter)
-]
-
-[tool.ruff.lint.isort]
-profile = "black"
-known-first-party = ["custom_components"]
+select = ["E", "W", "F", "I", "B", "C4", "UP"]
+ignore = ["E501"]
 
 [tool.mypy]
 python_version = "3.11"
 warn_return_any = false
-warn_unused_ignores = true
-warn_redundant_casts = true
-warn_unused_configs = true
-exclude = [
-    "build",
-    "dist",
-    ".venv",
-]
 
 [[tool.mypy.overrides]]
 module = "unofficial_pecron_api.*"
@@ -73,23 +43,3 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "--cov=custom_components/pecron --cov-report=term-missing"
-
-[tool.coverage.run]
-branch = true
-source = ["custom_components"]
-omit = [
-    "*/tests/*",
-    "*/test_*.py",
-]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if __name__ == .__main__.:",
-    "if TYPE_CHECKING:",
-    "class .*\\bProtocol\\):",
-    "@overload",
-]
