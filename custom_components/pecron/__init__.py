@@ -38,7 +38,39 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass, email, password, region, refresh_interval
     )
 
-    await coordinator.async_config_entry_first_refresh()
+    # Attempt initial refresh with retry logic
+    max_retries = 3
+    retry_delay = 5  # seconds
+
+    for attempt in range(max_retries):
+        try:
+            await coordinator.async_config_entry_first_refresh()
+            break  # Success, exit retry loop
+        except UpdateFailed as err:
+            if attempt < max_retries - 1:
+                _LOGGER.warning(
+                    "Initial data fetch failed (attempt %d/%d): %s. Retrying in %d seconds...",
+                    attempt + 1,
+                    max_retries,
+                    err,
+                    retry_delay,
+                )
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                _LOGGER.error(
+                    "Failed to fetch initial data after %d attempts. Setup will continue but integration may not work correctly.",
+                    max_retries,
+                )
+                # Show notification about the failure
+                hass.components.persistent_notification.async_create(
+                    f"Failed to connect to Pecron API after {max_retries} attempts. "
+                    "Please check your internet connection and credentials, then reload the integration.",
+                    title="Pecron: Connection Failed",
+                    notification_id=f"{DOMAIN}_connection_failed_{entry.entry_id}",
+                )
+                # Allow setup to continue so user can reload later
+                break
 
     # Show persistent notification if no devices found
     if coordinator.data is not None and not coordinator.data:
