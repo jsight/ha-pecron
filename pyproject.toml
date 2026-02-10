@@ -1,0 +1,97 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ha-pecron"
+version = "0.1.0"
+description = "Home Assistant integration for Pecron portable power stations"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Jesse Sightler", email = "jsightler@example.com"}]
+requires-python = ">=3.11"
+dependencies = ["unofficial-pecron-api==0.1.0"]
+
+[project.urls]
+Homepage = "https://github.com/jsight/ha-pecron"
+Repository = "https://github.com/jsight/ha-pecron"
+Issues = "https://github.com/jsight/ha-pecron/issues"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "build",
+    "dist",
+    ".egg-info",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.isort]
+profile = "black"
+line-length = 100
+known-first-party = ["custom_components"]
+
+[tool.mypy]
+python_version = "3.11"
+check_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+warn_return_any = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+exclude = [
+    "build",
+    "dist",
+    ".venv",
+]
+
+[[tool.mypy.overrides]]
+module = "unofficial_pecron_api.*"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--cov=custom_components/pecron --cov-report=term-missing"
+
+[tool.coverage.run]
+branch = true
+source = ["custom_components"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@overload",
+]
