@@ -9,6 +9,7 @@ from typing import Any
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
+    BinarySensorEntityDescription,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -23,12 +24,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
-class PecronBinarySensorDescription:
+class PecronBinarySensorDescription(BinarySensorEntityDescription):
     """Describe a Pecron binary sensor."""
 
-    key: str
-    name: str
-    device_class: BinarySensorDeviceClass | None = None
     icon_true: str | None = None
     icon_false: str | None = None
 
@@ -150,7 +148,6 @@ class PecronBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
         self._attr_unique_id = f"{DOMAIN}_{device_key}_{entity_description.key}"
         self._attr_name = f"{device.device_name} {entity_description.name}"
-        self._attr_device_class = entity_description.device_class
 
     @property
     def device_info(self) -> dict[str, Any]:

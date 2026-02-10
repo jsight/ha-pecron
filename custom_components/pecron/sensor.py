@@ -9,6 +9,7 @@ from typing import Any
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
+    SensorEntityDescription,
     SensorStateClass,
 )
 from homeassistant.const import UnitOfElectricPotential, UnitOfEnergy, UnitOfFrequency, UnitOfPower, UnitOfTime
@@ -31,15 +32,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
-class PecronSensorDescription:
+class PecronSensorDescription(SensorEntityDescription):
     """Describe a Pecron sensor."""
-
-    key: str
-    name: str
-    device_class: SensorDeviceClass | None = None
-    state_class: SensorStateClass | None = None
-    unit: str | None = None
-    icon: str | None = None
 
     def __post_init__(self) -> None:
         """Post init."""
@@ -61,35 +55,35 @@ PECRON_SENSORS = [
         name="Battery Percentage",
         device_class=SensorDeviceClass.BATTERY,
         state_class=SensorStateClass.MEASUREMENT,
-        unit="%",
+        native_unit_of_measurement="%",
     ),
     PecronSensorDescription(
         key="total_input_power",
         name="Input Power",
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
-        unit=UnitOfPower.WATT,
+        native_unit_of_measurement=UnitOfPower.WATT,
     ),
     PecronSensorDescription(
         key="total_output_power",
         name="Output Power",
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
-        unit=UnitOfPower.WATT,
+        native_unit_of_measurement=UnitOfPower.WATT,
     ),
     PecronSensorDescription(
         key="remain_charging_time",
         name="Time to Full",
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
-        unit=UnitOfTime.MINUTES,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
     ),
     PecronSensorDescription(
         key="remain_discharging_time",
         name="Time to Empty",
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
-        unit=UnitOfTime.MINUTES,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
     ),
 ]
 
@@ -175,10 +169,6 @@ class PecronSensor(CoordinatorEntity, SensorEntity):
 
         self._attr_unique_id = f"{DOMAIN}_{device_key}_{entity_description.key}"
         self._attr_name = f"{device.device_name} {entity_description.name}"
-        self._attr_device_class = entity_description.device_class
-        self._attr_state_class = entity_description.state_class
-        self._attr_native_unit_of_measurement = entity_description.unit
-        self._attr_icon = entity_description.icon
 
     @property
     def device_info(self) -> dict[str, Any]:
