@@ -40,6 +40,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await coordinator.async_config_entry_first_refresh()
 
+    # Show persistent notification if no devices found
+    if coordinator.data is not None and not coordinator.data:
+        hass.components.persistent_notification.async_create(
+            "No Pecron devices found on your account. "
+            "Please check that devices are registered in the Pecron mobile app and try reloading the integration.",
+            title="Pecron: No Devices Found",
+            notification_id=f"{DOMAIN}_no_devices_{entry.entry_id}",
+        )
+
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -88,7 +97,17 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             return await self.hass.async_add_executor_job(self._fetch_data)
         except Exception as err:
-            raise UpdateFailed(f"Error communicating with Pecron API: {err}") from err
+            error_str = str(err).lower()
+            # Differentiate error types for better diagnostics
+            if "authentication" in error_str or "401" in error_str or "unauthorized" in error_str:
+                _LOGGER.error("Authentication failed for Pecron account %s. Please check credentials.", self.email)
+                raise UpdateFailed(f"Authentication failed: {err}") from err
+            elif "connection" in error_str or "timeout" in error_str or "network" in error_str:
+                _LOGGER.warning("Connection error while communicating with Pecron API: %s", err)
+                raise UpdateFailed(f"Connection error: {err}") from err
+            else:
+                _LOGGER.error("Unexpected error communicating with Pecron API: %s", err, exc_info=True)
+                raise UpdateFailed(f"Error communicating with Pecron API: {err}") from err
 
     def _fetch_data(self) -> dict:
         """Fetch device data from API."""
