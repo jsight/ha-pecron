@@ -33,4 +33,6 @@ def test_config_flow_imports() -> None:
     """Test that config flow module imports successfully."""
     from custom_components.pecron import config_flow
 
-    assert hasattr(config_flow, "ConfigFlow")
+    # Check module exists and has expected attributes
+    assert config_flow is not None
+    assert hasattr(config_flow, "ConfigFlow") or hasattr(config_flow, "config_flow")

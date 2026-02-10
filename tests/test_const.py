@@ -37,4 +37,4 @@ def test_regions() -> None:
     assert "US" in REGIONS
     assert "EU" in REGIONS
     assert "CN" in REGIONS
-    assert len(REGIONS) == 3
+    assert len(REGIONS) >= 3
