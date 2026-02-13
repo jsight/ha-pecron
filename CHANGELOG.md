@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2026-02-10
+
+### Fixed
+- Automatic token refresh when Pecron API authentication expires
+- Integration now handles expired tokens gracefully without requiring manual reload or restart
+- Added retry logic (up to 2 attempts) to recover from transient authentication failures
+- Improved logging to distinguish between initial login and token refresh operations
+
 ## [0.2.3] - 2026-02-10
 
 ### Added
