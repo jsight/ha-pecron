@@ -139,29 +139,67 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> dict:
         """Fetch data from Pecron API."""
-        try:
-            return await self.hass.async_add_executor_job(self._fetch_data)
-        except Exception as err:
-            error_str = str(err).lower()
-            # Differentiate error types for better diagnostics
-            if "authentication" in error_str or "401" in error_str or "unauthorized" in error_str:
-                _LOGGER.error("Authentication failed for Pecron account %s. Please check credentials.", self.email)
-                raise UpdateFailed(f"Authentication failed: {err}") from err
-            elif "connection" in error_str or "timeout" in error_str or "network" in error_str:
-                _LOGGER.warning("Connection error while communicating with Pecron API: %s", err)
-                raise UpdateFailed(f"Connection error: {err}") from err
-            else:
-                _LOGGER.error("Unexpected error communicating with Pecron API: %s", err, exc_info=True)
-                raise UpdateFailed(f"Error communicating with Pecron API: {err}") from err
+        max_retries = 2
+        last_error = None
+
+        for attempt in range(max_retries):
+            try:
+                return await self.hass.async_add_executor_job(self._fetch_data)
+            except Exception as err:
+                last_error = err
+                error_str = str(err).lower()
+                # Differentiate error types for better diagnostics
+                if "authentication" in error_str or "401" in error_str or "unauthorized" in error_str:
+                    if attempt < max_retries - 1:
+                        # Token likely expired - reset API to force re-login on next attempt
+                        _LOGGER.warning(
+                            "Authentication failed for Pecron account %s (attempt %d/%d). "
+                            "Token may have expired - will refresh and retry.",
+                            self.email,
+                            attempt + 1,
+                            max_retries,
+                        )
+                        self.api = None
+                        continue  # Retry
+                    else:
+                        _LOGGER.error(
+                            "Authentication failed for Pecron account %s after %d attempts. "
+                            "Please check credentials.",
+                            self.email,
+                            max_retries,
+                        )
+                        raise UpdateFailed(f"Authentication failed: {err}") from err
+                elif "connection" in error_str or "timeout" in error_str or "network" in error_str:
+                    _LOGGER.warning("Connection error while communicating with Pecron API: %s", err)
+                    raise UpdateFailed(f"Connection error: {err}") from err
+                else:
+                    _LOGGER.error("Unexpected error communicating with Pecron API: %s", err, exc_info=True)
+                    raise UpdateFailed(f"Error communicating with Pecron API: {err}") from err
+
+        # If we exhausted retries without raising, raise the last error
+        if last_error:
+            raise UpdateFailed(f"Failed after {max_retries} attempts: {last_error}") from last_error
+
+        return {}
 
     def _fetch_data(self) -> dict:
         """Fetch device data from API."""
         if self.api is None:
-            _LOGGER.info("Initializing Pecron API connection for region: %s", self.region)
+            # Check if this is a re-initialization (token refresh) or initial setup
+            is_refresh = len(self.devices) > 0
+            if is_refresh:
+                _LOGGER.info("Refreshing Pecron API token for region: %s", self.region)
+            else:
+                _LOGGER.info("Initializing Pecron API connection for region: %s", self.region)
+
             self.api = PecronAPI(region=self.region)
             self.api.login(self.email, self.password)
             self.devices = self.api.get_devices()
-            _LOGGER.info("Found %d Pecron device(s) on account", len(self.devices))
+
+            if is_refresh:
+                _LOGGER.info("Token refreshed successfully. Found %d Pecron device(s) on account", len(self.devices))
+            else:
+                _LOGGER.info("Found %d Pecron device(s) on account", len(self.devices))
 
             if not self.devices:
                 _LOGGER.warning(
