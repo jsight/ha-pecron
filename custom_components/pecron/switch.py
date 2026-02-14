@@ -62,15 +62,49 @@ async def async_setup_entry(
     def create_switches_for_device(device_key: str, device_data: dict) -> list:
         """Create all switch entities for a device."""
         switches = []
-        for switch_desc in PECRON_SWITCHES:
-            switches.append(
-                PecronSwitch(
-                    coordinator,
-                    device_key,
-                    device_data["device"],
-                    switch_desc,
-                )
+        tsl = device_data.get("tsl")
+
+        # If TSL is available, filter switches based on supported properties
+        if tsl:
+            tsl_property_codes = {prop.code for prop in tsl}
+            _LOGGER.debug(
+                "Filtering switches for %s based on TSL with %d properties",
+                device_data["device"].device_name,
+                len(tsl_property_codes),
             )
+
+            for switch_desc in PECRON_SWITCHES:
+                if switch_desc.key in tsl_property_codes:
+                    switches.append(
+                        PecronSwitch(
+                            coordinator,
+                            device_key,
+                            device_data["device"],
+                            switch_desc,
+                        )
+                    )
+                else:
+                    _LOGGER.debug(
+                        "Skipping switch '%s' for %s - not in TSL",
+                        switch_desc.key,
+                        device_data["device"].device_name,
+                    )
+        else:
+            # Fallback: create all switches if TSL is not available
+            _LOGGER.debug(
+                "TSL not available for %s - creating all switches",
+                device_data["device"].device_name,
+            )
+            for switch_desc in PECRON_SWITCHES:
+                switches.append(
+                    PecronSwitch(
+                        coordinator,
+                        device_key,
+                        device_data["device"],
+                        switch_desc,
+                    )
+                )
+
         return switches
 
     # Create initial switches

@@ -221,9 +221,46 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
         for device in self.devices:
             try:
                 props = self.api.get_device_properties(device)
+
+                # Fetch TSL (Thing Specification Language) for capability discovery
+                tsl = None
+                try:
+                    tsl = self.api.get_product_tsl(device)
+                    _LOGGER.debug(
+                        "TSL for %s (%s): %d properties",
+                        device.device_name,
+                        device.product_name,
+                        len(tsl) if tsl else 0,
+                    )
+                    if tsl:
+                        # Log discovered capabilities
+                        readable_props = [p.code for p in tsl if not p.writable]
+                        writable_props = [p.code for p in tsl if p.writable]
+                        _LOGGER.info(
+                            "Device %s supports %d readable and %d writable properties",
+                            device.device_name,
+                            len(readable_props),
+                            len(writable_props),
+                        )
+                        _LOGGER.debug(
+                            "Readable properties: %s",
+                            readable_props,
+                        )
+                        _LOGGER.debug(
+                            "Writable properties: %s",
+                            writable_props,
+                        )
+                except Exception as tsl_err:
+                    _LOGGER.warning(
+                        "Could not fetch TSL for %s: %s. Will use all sensor definitions.",
+                        device.device_name,
+                        tsl_err,
+                    )
+
                 data[device.device_key] = {
                     "device": device,
                     "properties": props,
+                    "tsl": tsl,
                 }
                 _LOGGER.debug(
                     "Successfully fetched properties for %s: %s",

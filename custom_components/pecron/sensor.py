@@ -102,15 +102,49 @@ async def async_setup_entry(
     def create_sensors_for_device(device_key: str, device_data: dict) -> list:
         """Create all sensor entities for a device."""
         sensors = []
-        for sensor_desc in PECRON_SENSORS:
-            sensors.append(
-                PecronSensor(
-                    coordinator,
-                    device_key,
-                    device_data["device"],
-                    sensor_desc,
-                )
+        tsl = device_data.get("tsl")
+
+        # If TSL is available, filter sensors based on supported properties
+        if tsl:
+            tsl_property_codes = {prop.code for prop in tsl}
+            _LOGGER.debug(
+                "Filtering sensors for %s based on TSL with %d properties",
+                device_data["device"].device_name,
+                len(tsl_property_codes),
             )
+
+            for sensor_desc in PECRON_SENSORS:
+                if sensor_desc.key in tsl_property_codes:
+                    sensors.append(
+                        PecronSensor(
+                            coordinator,
+                            device_key,
+                            device_data["device"],
+                            sensor_desc,
+                        )
+                    )
+                else:
+                    _LOGGER.debug(
+                        "Skipping sensor '%s' for %s - not in TSL",
+                        sensor_desc.key,
+                        device_data["device"].device_name,
+                    )
+        else:
+            # Fallback: create all sensors if TSL is not available
+            _LOGGER.debug(
+                "TSL not available for %s - creating all sensors",
+                device_data["device"].device_name,
+            )
+            for sensor_desc in PECRON_SENSORS:
+                sensors.append(
+                    PecronSensor(
+                        coordinator,
+                        device_key,
+                        device_data["device"],
+                        sensor_desc,
+                    )
+                )
+
         return sensors
 
     # Create initial sensors
