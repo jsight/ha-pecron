@@ -9,7 +9,7 @@
   "documentation": "https://github.com/jsight/ha-pecron",
   "issue_tracker": "https://github.com/jsight/ha-pecron/issues",
   "requirements": [
-    "unofficial-pecron-api==0.1.0"
+    "unofficial-pecron-api==0.2.0"
   ],
   "version": "0.2.4",
   "iot_class": "cloud_polling",
