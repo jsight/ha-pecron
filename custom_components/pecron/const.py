@@ -37,3 +37,8 @@ SENSOR_AC_OUTPUT_FREQUENCY: Final = "ac_output_frequency"
 SWITCH_AC: Final = "ac_switch"
 SWITCH_DC: Final = "dc_switch"
 SWITCH_UPS: Final = "ups_status"
+
+# Services
+SERVICE_SET_PROPERTY: Final = "set_property"
+ATTR_PROPERTY_CODE: Final = "property_code"
+ATTR_VALUE: Final = "value"

@@ -1,0 +1,25 @@
+set_property:
+  name: Set property
+  description: Set a writable device property to a specific value. Use this for advanced control of properties not exposed as standard entities.
+  fields:
+    device_id:
+      name: Device
+      description: The Pecron device to control.
+      required: true
+      selector:
+        device:
+          integration: pecron
+    property_code:
+      name: Property code
+      description: The property code to set (e.g., 'ac_switch', 'dc_switch'). Check device TSL for available writable properties.
+      required: true
+      example: "ac_switch"
+      selector:
+        text:
+    value:
+      name: Value
+      description: The value to set. Type depends on the property (boolean for switches, number for power limits, etc.).
+      required: true
+      example: true
+      selector:
+        text:
