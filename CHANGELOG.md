@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-02-14
+
+### Added
+- **Controllable Switch Entities**: AC and DC outputs are now controllable switches (previously read-only binary sensors)
+  - Turn AC/DC outputs on/off directly from Home Assistant
+  - Create automations to control power outputs based on conditions
+  - Enhanced error handling with persistent notifications on control failure
+- **Advanced Control Service**: New `pecron.set_property` service for power users
+  - Control any writable device property via automations or scripts
+  - TSL validation ensures only valid properties are modified
+  - Auto-converts value types (boolean strings, numbers)
+  - Detailed error feedback for troubleshooting
+- **TSL-Based Dynamic Discovery**: Integration now queries device capabilities
+  - Only creates entities for properties the device actually supports
+  - No more 'unavailable' entities for unsupported features
+  - Automatically supports new device models without code changes
+  - Logs discovered readable and writable properties for diagnostics
+
+### Changed
+- Upgraded to unofficial-pecron-api v0.2.0 (adds control capabilities)
+- AC and DC outputs moved from binary_sensor platform to switch platform
+- Binary sensors now only include UPS Mode and Online status (read-only properties)
+
+### Fixed
+- Token refresh now triggers correctly during property fetch failures (not just initial device fetch)
+- Authentication errors during `get_device_properties()` now properly reset API and retry
+- Case-insensitive detection of authentication errors (5032, token, 401, unauthorized, authentication)
+
+### Developer
+- Added comprehensive test suite for token refresh scenarios (16 tests, all passing)
+- Improved test coverage for coordinator retry logic
+- Enhanced logging for token refresh operations
+
 ## [0.2.4] - 2026-02-10
 
 ### Fixed
