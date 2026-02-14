@@ -432,13 +432,28 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
                         dir(props),
                     )
             except Exception as err:
-                _LOGGER.error(
-                    "Error fetching properties for %s (key: %s): %s",
-                    device.device_name,
-                    device.device_key,
-                    err,
-                    exc_info=True,
-                )
+                error_str = str(err).lower()
+                # Check if this is an authentication error that needs token refresh
+                if ("authentication" in error_str or "401" in error_str or "unauthorized" in error_str or
+                    "5032" in error_str or "token" in error_str):
+                    _LOGGER.warning(
+                        "Authentication error fetching properties for %s: %s. Token may have expired.",
+                        device.device_name,
+                        err,
+                    )
+                    # Reset API to force token refresh on next attempt
+                    self.api = None
+                    # Re-raise so retry logic in _async_update_data can handle it
+                    raise
+                else:
+                    # Non-auth errors: log and continue with other devices
+                    _LOGGER.error(
+                        "Error fetching properties for %s (key: %s): %s",
+                        device.device_name,
+                        device.device_key,
+                        err,
+                        exc_info=True,
+                    )
 
         if data:
             _LOGGER.debug("Successfully fetched data for %d device(s)", len(data))
