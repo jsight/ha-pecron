@@ -149,7 +149,8 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
                 last_error = err
                 error_str = str(err).lower()
                 # Differentiate error types for better diagnostics
-                if "authentication" in error_str or "401" in error_str or "unauthorized" in error_str:
+                if ("authentication" in error_str or "401" in error_str or "unauthorized" in error_str or
+                    "5032" in error_str or "token" in error_str):
                     if attempt < max_retries - 1:
                         # Token likely expired - reset API to force re-login on next attempt
                         _LOGGER.warning(
