@@ -44,16 +44,6 @@ class PecronBinarySensorDescription(BinarySensorEntityDescription):
 
 PECRON_BINARY_SENSORS = [
     PecronBinarySensorDescription(
-        key="ac_switch",
-        name="AC Output",
-        device_class=BinarySensorDeviceClass.POWER,
-    ),
-    PecronBinarySensorDescription(
-        key="dc_switch",
-        name="DC Output",
-        device_class=BinarySensorDeviceClass.POWER,
-    ),
-    PecronBinarySensorDescription(
         key="ups_status",
         name="UPS Mode",
         icon_true="mdi:uninterruptible-power-supply",
