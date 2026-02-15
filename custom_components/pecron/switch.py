@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -166,6 +167,7 @@ class PecronSwitch(CoordinatorEntity, SwitchEntity):
         self._device_key = device_key
         self._device = device
         self._attr_is_on = None  # Will be set from coordinator data
+        self._last_change_time = None  # Track when we last changed state
 
         self._attr_unique_id = f"{DOMAIN}_{device_key}_{entity_description.key}"
         self._attr_name = f"{device.device_name} {entity_description.name}"
@@ -238,6 +240,7 @@ class PecronSwitch(CoordinatorEntity, SwitchEntity):
         # Optimistic update: Set state immediately for instant UI feedback
         old_state = self._attr_is_on
         self._attr_is_on = enabled
+        self._last_change_time = time.time()  # Track when we made the change
         self.async_write_ha_state()
 
         try:
@@ -306,6 +309,17 @@ class PecronSwitch(CoordinatorEntity, SwitchEntity):
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        # Clear optimistic state and use real state from coordinator
-        self._attr_is_on = None
+        # Only clear optimistic state if enough time has passed since last change
+        # This prevents stale coordinator updates from overriding optimistic state
+        # before the device has actually changed
+        if self._last_change_time is None or (time.time() - self._last_change_time) >= 20:
+            # Settling period passed, trust coordinator data
+            self._attr_is_on = None
+        else:
+            # Still in settling period, keep optimistic state
+            _LOGGER.debug(
+                "Ignoring coordinator update for %s (%.1fs since change, waiting for device to settle)",
+                self._attr_name,
+                time.time() - self._last_change_time,
+            )
         self.async_write_ha_state()
