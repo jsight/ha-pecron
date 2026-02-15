@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2026-02-15
+
+### Fixed
+- **Eliminated UI flicker during switch toggles**
+  - Problem: Switches showed ON → OFF → ON pattern when toggling
+  - Root cause: Immediate coordinator refresh returned stale state, clearing optimistic update
+  - Solution: 20-second settling period keeps optimistic state while device processes change
+  - Stale coordinator updates ignored during settling period
+  - UI now shows smooth ON/OFF transitions without flickering back to old state
+- Switch state synchronization now rock-solid with optimistic updates + settling period + delayed refreshes
+
 ## [0.3.4] - 2026-02-15
 
 ### Fixed
