@@ -164,6 +164,7 @@ class PecronSwitch(CoordinatorEntity, SwitchEntity):
         self.entity_description = entity_description
         self._device_key = device_key
         self._device = device
+        self._attr_is_on = None  # Will be set from coordinator data
 
         self._attr_unique_id = f"{DOMAIN}_{device_key}_{entity_description.key}"
         self._attr_name = f"{device.device_name} {entity_description.name}"
@@ -182,6 +183,10 @@ class PecronSwitch(CoordinatorEntity, SwitchEntity):
     @property
     def is_on(self) -> bool | None:
         """Return the state of the switch."""
+        # Return optimistic state if set, otherwise read from coordinator
+        if self._attr_is_on is not None:
+            return self._attr_is_on
+
         if not self.coordinator.data or self._device_key not in self.coordinator.data:
             return None
 
@@ -229,6 +234,11 @@ class PecronSwitch(CoordinatorEntity, SwitchEntity):
             _LOGGER.error("API method %s not found", method_name)
             return
 
+        # Optimistic update: Set state immediately for instant UI feedback
+        old_state = self._attr_is_on
+        self._attr_is_on = enabled
+        self.async_write_ha_state()
+
         try:
             # Call the API method in executor
             result = await self.hass.async_add_executor_job(
@@ -242,6 +252,9 @@ class PecronSwitch(CoordinatorEntity, SwitchEntity):
                     self._attr_name,
                     result.message or "Unknown error",
                 )
+                # Revert optimistic update on failure
+                self._attr_is_on = old_state
+                self.async_write_ha_state()
                 self.hass.components.persistent_notification.async_create(
                     f"Failed to {'turn on' if enabled else 'turn off'} {self._attr_name}: "
                     f"{result.message or 'Unknown error'}",
@@ -254,7 +267,7 @@ class PecronSwitch(CoordinatorEntity, SwitchEntity):
                     "enabled" if enabled else "disabled",
                     self._attr_name,
                 )
-                # Request a refresh to update state
+                # Request a refresh to sync with actual device state
                 await self.coordinator.async_request_refresh()
 
         except Exception as err:
@@ -264,6 +277,9 @@ class PecronSwitch(CoordinatorEntity, SwitchEntity):
                 err,
                 exc_info=True,
             )
+            # Revert optimistic update on error
+            self._attr_is_on = old_state
+            self.async_write_ha_state()
             self.hass.components.persistent_notification.async_create(
                 f"Error controlling {self._attr_name}: {err}",
                 title="Pecron: Control Error",
@@ -273,4 +289,6 @@ class PecronSwitch(CoordinatorEntity, SwitchEntity):
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
+        # Clear optimistic state and use real state from coordinator
+        self._attr_is_on = None
         self.async_write_ha_state()

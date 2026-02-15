@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2026-02-15
+
+### Fixed
+- **Critical**: Switch state not updating in UI after toggle
+  - Implemented optimistic UI updates for instant feedback
+  - UI now updates immediately when toggling AC/DC switches
+  - State reverts automatically if API call fails
+  - Background coordinator refresh confirms actual device state
+- Previous behavior: UI showed stale state until next scheduled refresh (up to 10 minutes)
+- New behavior: UI updates instantly, confirmed by API within seconds
+
 ## [0.3.2] - 2026-02-15
 
 ### Added
