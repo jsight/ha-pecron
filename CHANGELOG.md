@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2026-02-15
+
+### Fixed
+- **Enhanced switch state synchronization** with delayed refreshes
+  - Added automatic refreshes at 5 seconds and 15 seconds after toggle
+  - Accounts for device processing delay
+  - Ensures UI eventually syncs even if optimistic update doesn't trigger
+  - Multiple refresh attempts catch slow device responses
+- Combines optimistic updates (instant feedback) with scheduled polling (guaranteed sync)
+
 ## [0.3.3] - 2026-02-15
 
 ### Fixed
