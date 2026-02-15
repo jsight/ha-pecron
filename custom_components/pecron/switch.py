@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass
 from typing import Any
@@ -267,8 +268,24 @@ class PecronSwitch(CoordinatorEntity, SwitchEntity):
                     "enabled" if enabled else "disabled",
                     self._attr_name,
                 )
-                # Request a refresh to sync with actual device state
+                # Request immediate refresh
                 await self.coordinator.async_request_refresh()
+
+                # Schedule additional refreshes at 5s and 15s to ensure UI syncs
+                # (Device may take time to actually change state)
+                async def delayed_refresh(delay: int) -> None:
+                    """Refresh coordinator after delay."""
+                    await asyncio.sleep(delay)
+                    _LOGGER.debug(
+                        "Delayed refresh (%ds) for %s after state change",
+                        delay,
+                        self._attr_name,
+                    )
+                    await self.coordinator.async_request_refresh()
+
+                # Create background tasks for delayed refreshes
+                asyncio.create_task(delayed_refresh(5))
+                asyncio.create_task(delayed_refresh(15))
 
         except Exception as err:
             _LOGGER.error(
