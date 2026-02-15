@@ -35,6 +35,9 @@ _LOGGER = logging.getLogger(__name__)
 class PecronSensorDescription(SensorEntityDescription):
     """Describe a Pecron sensor."""
 
+    always_create: bool = False  # Bypass TSL filtering
+    smart_availability: bool = False  # Use smart logic for availability
+
     def __post_init__(self) -> None:
         """Post init."""
         if not self.icon:
@@ -77,6 +80,8 @@ PECRON_SENSORS = [
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTime.MINUTES,
+        always_create=True,
+        smart_availability=True,
     ),
     PecronSensorDescription(
         key="remain_discharging_time",
@@ -84,6 +89,8 @@ PECRON_SENSORS = [
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTime.MINUTES,
+        always_create=True,
+        smart_availability=True,
     ),
 ]
 
@@ -114,8 +121,11 @@ async def async_setup_entry(
             )
 
             for sensor_desc in PECRON_SENSORS:
-                # Check both property name and _hm variant (API maps xxx_hm -> xxx)
-                if sensor_desc.key in tsl_property_codes or f"{sensor_desc.key}_hm" in tsl_property_codes:
+                # Always create sensors marked with always_create flag
+                # Otherwise check both property name and _hm variant (API maps xxx_hm -> xxx)
+                if (sensor_desc.always_create or
+                    sensor_desc.key in tsl_property_codes or
+                    f"{sensor_desc.key}_hm" in tsl_property_codes):
                     sensors.append(
                         PecronSensor(
                             coordinator,
@@ -234,6 +244,46 @@ class PecronSensor(CoordinatorEntity, SensorEntity):
                 self._device.device_name,
                 dir(props) if hasattr(props, "__dir__") else "unknown",
             )
+
+        # Smart availability logic for time sensors
+        if self.entity_description.smart_availability and value is not None:
+            # Get power values to determine device state (handle missing/None/negative)
+            input_power = getattr(props, "total_input_power", None)
+            output_power = getattr(props, "total_output_power", None)
+
+            # Treat None or negative as 0
+            input_power = max(0, input_power) if input_power is not None else 0
+            output_power = max(0, output_power) if output_power is not None else 0
+
+            # Determine device state
+            is_idle = input_power == 0 and output_power == 0
+            is_charging_only = input_power > 0 and output_power == 0
+            is_discharging_only = input_power == 0 and output_power > 0
+            is_ups_mode = input_power > 0 and output_power > 0
+
+            # Time to Full logic
+            if self.entity_description.key == "remain_charging_time":
+                if is_discharging_only or is_idle:
+                    _LOGGER.debug(
+                        "Time to Full N/A for %s - device state: idle=%s discharging=%s",
+                        self._device.device_name,
+                        is_idle,
+                        is_discharging_only,
+                    )
+                    return None
+                # Show value for charging_only or ups_mode
+
+            # Time to Empty logic
+            elif self.entity_description.key == "remain_discharging_time":
+                if is_charging_only or is_idle:
+                    _LOGGER.debug(
+                        "Time to Empty N/A for %s - device state: idle=%s charging=%s",
+                        self._device.device_name,
+                        is_idle,
+                        is_charging_only,
+                    )
+                    return None
+                # Show value for discharging_only or ups_mode
 
         return value
 
