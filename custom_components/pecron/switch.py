@@ -74,7 +74,9 @@ async def async_setup_entry(
             )
 
             for switch_desc in PECRON_SWITCHES:
-                if switch_desc.key in tsl_property_codes:
+                # Check both the property name and the _hm variant
+                # (API maps ac_switch_hm -> ac_switch in properties)
+                if switch_desc.key in tsl_property_codes or f"{switch_desc.key}_hm" in tsl_property_codes:
                     switches.append(
                         PecronSwitch(
                             coordinator,
@@ -85,9 +87,11 @@ async def async_setup_entry(
                     )
                 else:
                     _LOGGER.debug(
-                        "Skipping switch '%s' for %s - not in TSL",
+                        "Skipping switch '%s' for %s - not in TSL (checked '%s' and '%s_hm')",
                         switch_desc.key,
                         device_data["device"].device_name,
+                        switch_desc.key,
+                        switch_desc.key,
                     )
         else:
             # Fallback: create all switches if TSL is not available

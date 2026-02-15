@@ -84,7 +84,10 @@ async def async_setup_entry(
 
             for sensor_desc in PECRON_BINARY_SENSORS:
                 # Special case: 'online' is from device object, not TSL
-                if sensor_desc.key == "online" or sensor_desc.key in tsl_property_codes:
+                # Check both property name and _hm variant (API maps xxx_hm -> xxx)
+                if (sensor_desc.key == "online" or
+                    sensor_desc.key in tsl_property_codes or
+                    f"{sensor_desc.key}_hm" in tsl_property_codes):
                     sensors.append(
                         PecronBinarySensor(
                             coordinator,
@@ -95,9 +98,11 @@ async def async_setup_entry(
                     )
                 else:
                     _LOGGER.debug(
-                        "Skipping binary sensor '%s' for %s - not in TSL",
+                        "Skipping binary sensor '%s' for %s - not in TSL (checked '%s' and '%s_hm')",
                         sensor_desc.key,
                         device_data["device"].device_name,
+                        sensor_desc.key,
+                        sensor_desc.key,
                     )
         else:
             # Fallback: create all sensors if TSL is not available
