@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-02-15
+
+### Fixed
+- **Critical**: TSL filtering was too strict, causing switches and some sensors to not appear after integration reload
+- TSL property codes use `_hm` suffix (e.g., `ac_switch_hm`) but API maps them to properties without suffix (e.g., `ac_switch`)
+- Filtering logic now checks both `property_name` and `property_name_hm` variants
+- Switches (AC Output, DC Output) now appear correctly
+- UPS Mode binary sensor now appears correctly
+- All supported entities are now created properly
+
+### Impact
+If you upgraded to v0.3.0 and don't see your switches:
+1. Update to v0.3.1
+2. Reload the integration (Settings → Devices & Services → Pecron → three dots → Reload)
+3. Switches and missing sensors will now appear
+
 ## [0.3.0] - 2026-02-14
 
 ### Added
