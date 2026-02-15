@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-02-15
+
+### Added
+- **Smart Time Sensor Logic**: Time to Full and Time to Empty sensors now intelligently show N/A based on device state
+  - **IDLE** (no power flow): Both sensors show N/A
+  - **CHARGING** (input > 0, no output): Show Time to Full, N/A for Time to Empty
+  - **DISCHARGING** (output > 0, no input): N/A for Time to Full, show Time to Empty
+  - **UPS MODE** (both input and output): Show both values (charging time + runtime if input lost)
+- **Always Show Both Sensors**: Both time sensors always appear regardless of TSL availability
+- **Robust Edge Case Handling**:
+  - Missing properties: Pass through N/A
+  - Zero values: Show 0 (indicates battery full/empty, not N/A)
+  - Negative power values: Treated as 0 (measurement errors)
+  - None/missing power values: Treated as 0
+
+### Changed
+- Time sensors bypass TSL filtering (always created)
+- Time sensor values are now context-aware instead of raw API values
+
+### Developer
+- Added 18 comprehensive unit tests for time sensor logic
+- All device states tested (idle, charging, discharging, UPS mode)
+- Edge cases: missing properties, zero values, negative/None power values
+- Total test count: 43 (all passing)
+
 ## [0.3.1] - 2026-02-15
 
 ### Fixed
