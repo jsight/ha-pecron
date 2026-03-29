@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-03-28
+
+### Added
+- **AC Charge Speed Control**: New select entity to control AC charging power level
+  - Options: 0%, 25%, 50%, 75%, 100%
+  - Optimistic UI updates with 20-second settling period
+  - Delayed refreshes at 5s and 15s for state reconciliation
+  - TSL-based discovery: only created for devices that support `ac_charging_power_ios`
+- **New select platform**: Framework for future dropdown-style controls
+
+### Changed
+- Upgraded to unofficial-pecron-api v0.3.0 (adds `set_ac_charge_speed()` and expanded device properties)
+
 ## [0.3.5] - 2026-02-15
 
 ### Fixed
