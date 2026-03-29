@@ -13,6 +13,22 @@ A Home Assistant community integration for Pecron portable power stations. Monit
 - **Multi-region Support** - US, EU, and CN regions
 - **Automation Ready** - Create complex automations based on battery level, power usage, etc.
 
+## How It Works
+
+This integration communicates with your Pecron device through **Pecron's cloud API** — the same backend used by the official Pecron mobile app. It does **not** connect directly to the device over your local network or Bluetooth.
+
+**What this means:**
+- Your Pecron device must be connected to WiFi and registered in the Pecron app
+- You use the same email/password credentials as the Pecron app
+- Home Assistant polls the cloud API at a configurable interval (1-60 minutes) for status updates
+- Device commands (e.g., turning AC/DC on/off) are sent through the cloud API
+- An active internet connection is required for both Home Assistant and the Pecron device
+
+**Regional endpoints:**
+- **US** (default): `iot-api.landecia.com`
+- **EU**: `iot-api.acceleronix.io`
+- **CN**: `iot-api.quectelcn.com`
+
 ## Installation
 
 ### Via HACS
