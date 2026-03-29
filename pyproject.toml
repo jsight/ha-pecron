@@ -10,7 +10,7 @@ readme = "README.md"
 license = {text = "MIT"}
 authors = [{name = "Jesse Sightler", email = "jsightler@example.com"}]
 requires-python = ">=3.11"
-dependencies = ["unofficial-pecron-api==0.1.0"]
+dependencies = ["unofficial-pecron-api==0.3.0"]
 
 [project.urls]
 Homepage = "https://github.com/jsight/ha-pecron"

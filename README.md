@@ -67,6 +67,9 @@ The integration creates the following entities for each device:
 - **AC Output** - Control AC power output (on/off)
 - **DC Output** - Control DC power output (on/off)
 
+### Selects
+- **AC Charge Speed** - Control AC charging power level (0%, 25%, 50%, 75%, 100%)
+
 ### Sensors
 - **Battery Percentage** - Current battery level (%)
 - **Input Power** - Power being drawn from input sources (W)

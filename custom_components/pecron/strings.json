@@ -54,6 +54,11 @@
         "name": "AC output frequency"
       }
     },
+    "select": {
+      "ac_charge_speed": {
+        "name": "AC charge speed"
+      }
+    },
     "binary_sensor": {
       "ac_switch": {
         "name": "AC output"
