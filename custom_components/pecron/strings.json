@@ -38,6 +38,12 @@
       "total_output_power": {
         "name": "Output power"
       },
+      "ac_input": {
+        "name": "AC input power"
+      },
+      "dc_input": {
+        "name": "DC input power"
+      },
       "remaining_charging_time": {
         "name": "Time to full"
       },

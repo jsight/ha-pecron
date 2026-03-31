@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-03-31
+
+### Added
+- **AC Input Power sensor** - Grid/AC charging power (W), extracted from `ac_data_input_hm` struct
+- **DC Input Power sensor** - Solar/DC input power (W), extracted from `dc_data_input_hm` struct
+- Both sensors use TSL-based discovery and only appear for devices that report these properties
+
+### Changed
+- Sensor descriptor supports struct field extraction for STRUCT-type TSL properties
+- TSL filtering now handles `_data_input_hm` code variants for struct sensors
+
 ## [0.4.0] - 2026-03-28
 
 ### Added
