@@ -37,6 +37,8 @@ class PecronSensorDescription(SensorEntityDescription):
 
     always_create: bool = False  # Bypass TSL filtering
     smart_availability: bool = False  # Use smart logic for availability
+    struct_property: str | None = None  # Parent property name if value is inside a STRUCT dict
+    struct_field: str | None = None  # Key within the struct dict to extract
 
     def __post_init__(self) -> None:
         """Post init."""
@@ -73,6 +75,26 @@ PECRON_SENSORS = [
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfPower.WATT,
+    ),
+    PecronSensorDescription(
+        key="ac_input",
+        name="AC Input Power",
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        icon="mdi:power-plug",
+        struct_property="ac_input",
+        struct_field="ac_power",
+    ),
+    PecronSensorDescription(
+        key="dc_input",
+        name="DC Input Power",
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        icon="mdi:solar-power",
+        struct_property="dc_input",
+        struct_field="dc_input_power",
     ),
     PecronSensorDescription(
         key="remain_charging_time",
@@ -123,9 +145,15 @@ async def async_setup_entry(
             for sensor_desc in PECRON_SENSORS:
                 # Always create sensors marked with always_create flag
                 # Otherwise check both property name and _hm variant (API maps xxx_hm -> xxx)
+                # For struct sensors, also check the TSL code with _data_ infix
+                # (e.g., ac_input -> ac_data_input_hm)
+                tsl_key = sensor_desc.key
+                tsl_key_hm = f"{sensor_desc.key}_hm"
+                tsl_key_data_hm = f"{tsl_key.replace('_input', '_data_input')}_hm" if "_input" in tsl_key else None
                 if (sensor_desc.always_create or
-                    sensor_desc.key in tsl_property_codes or
-                    f"{sensor_desc.key}_hm" in tsl_property_codes):
+                    tsl_key in tsl_property_codes or
+                    tsl_key_hm in tsl_property_codes or
+                    (tsl_key_data_hm and tsl_key_data_hm in tsl_property_codes)):
                     sensors.append(
                         PecronSensor(
                             coordinator,
@@ -235,6 +263,20 @@ class PecronSensor(CoordinatorEntity, SensorEntity):
             return None
 
         props = self.coordinator.data[self._device_key]["properties"]
+
+        # For struct sensors, extract the value from the parent dict
+        if self.entity_description.struct_property and self.entity_description.struct_field:
+            struct_dict = getattr(props, self.entity_description.struct_property, None)
+            if not struct_dict or not isinstance(struct_dict, dict):
+                return None
+            raw = struct_dict.get(self.entity_description.struct_field)
+            if raw is None:
+                return None
+            try:
+                return int(raw) if "." not in str(raw) else float(raw)
+            except (ValueError, TypeError):
+                return None
+
         value = getattr(props, self.entity_description.key, None)
 
         if value is None and not hasattr(props, self.entity_description.key):
