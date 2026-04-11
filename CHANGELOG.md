@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-04-10
+
+### Changed
+- **Dynamic AC Charge Speed options from TSL specs**: Options are now derived from each device model's TSL metadata instead of being hardcoded. E300LFP shows 0%/25%/50%/75%/100% (values 0-4), E3600LFP shows 10%/20%/.../100% (values 1-10), and other models will automatically get their correct options.
+- Upgraded to unofficial-pecron-api v0.4.0 (adds `TslProperty.enum_values` and `enum_map` for ENUM properties)
+- Graceful fallback to E300LFP defaults if TSL specs are unavailable
+
+### Fixed
+- AC Charge Speed select showing wrong options for E3600LFP and other non-E300LFP models (#5)
+
 ## [0.4.1] - 2026-03-31
 
 ### Added

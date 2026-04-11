@@ -9,9 +9,9 @@
   "documentation": "https://github.com/jsight/ha-pecron",
   "issue_tracker": "https://github.com/jsight/ha-pecron/issues",
   "requirements": [
-    "unofficial-pecron-api==0.3.0"
+    "unofficial-pecron-api>=0.4.0"
   ],
-  "version": "0.4.1",
+  "version": "0.5.0",
   "iot_class": "cloud_polling",
   "homeassistant": {
     "minimum_version": "2024.1.0"
