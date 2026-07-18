@@ -8,6 +8,7 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import (
     UnitOfElectricCurrent,
     UnitOfElectricPotential,
+    UnitOfPower,
     UnitOfTemperature,
 )
 
@@ -60,6 +61,57 @@ def test_battery_current_sensor_metadata_and_value() -> None:
     coordinator, device = _sensor_with_battery_pack({"host_packet_current": "-12.5"})
     sensor = PecronSensor(coordinator, "test_device", device, description)
     assert sensor.native_value == -12.5
+
+
+@pytest.mark.parametrize(
+    ("current", "expected"),
+    [
+        ("10", 512.0),
+        ("-12.5", -640.0),
+        ("0", 0.0),
+    ],
+)
+def test_battery_power_sensor_metadata_and_signed_value(current: str, expected: float) -> None:
+    """Battery power is voltage times signed current in watts."""
+    description = _sensor_description("battery_power")
+
+    assert description.device_class is SensorDeviceClass.POWER
+    assert description.state_class is SensorStateClass.MEASUREMENT
+    assert description.native_unit_of_measurement == UnitOfPower.WATT
+    assert description.tsl_property == "host_packet_data_jdb"
+    assert description.struct_property == "battery_pack"
+
+    coordinator, device = _sensor_with_battery_pack(
+        {"host_packet_voltage": "51.2", "host_packet_current": current}
+    )
+    sensor = PecronSensor(coordinator, "test_device", device, description)
+
+    assert sensor.native_value == expected
+
+
+@pytest.mark.parametrize(
+    "battery_pack",
+    [
+        None,
+        {},
+        {"host_packet_voltage": "51.2"},
+        {"host_packet_current": "10"},
+        {"host_packet_voltage": None, "host_packet_current": "10"},
+        {"host_packet_voltage": "invalid", "host_packet_current": "10"},
+        {"host_packet_voltage": "51.2", "host_packet_current": "invalid"},
+        {"host_packet_voltage": "nan", "host_packet_current": "10"},
+        {"host_packet_voltage": "51.2", "host_packet_current": "inf"},
+    ],
+)
+def test_battery_power_sensor_handles_missing_and_invalid_values(
+    battery_pack: dict | None,
+) -> None:
+    """Battery power is unavailable unless voltage and current are numeric."""
+    description = _sensor_description("battery_power")
+    coordinator, device = _sensor_with_battery_pack(battery_pack)
+    sensor = PecronSensor(coordinator, "test_device", device, description)
+
+    assert sensor.native_value is None
 
 
 def test_battery_temperature_sensor_metadata_and_value() -> None:
@@ -131,4 +183,5 @@ async def test_battery_sensors_created_from_battery_packet_tsl() -> None:
     sensor_keys = {sensor.entity_description.key for sensor in sensors}
     assert "battery_voltage" in sensor_keys
     assert "battery_current" in sensor_keys
+    assert "battery_power" in sensor_keys
     assert "battery_temperature" in sensor_keys

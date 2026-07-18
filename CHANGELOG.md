@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Battery pack sensors**: Exposes battery voltage in volts, signed battery current in amperes, and battery temperature in degrees Celsius when supported by the device TSL.
+- **Battery pack sensors**: Exposes battery voltage in volts, signed battery current in amperes, calculated battery power in watts, and battery temperature in degrees Celsius when supported by the device TSL. Battery power is positive while charging and negative while discharging.
 
 ### Fixed
 - Read battery voltage, current, and temperature from the nested battery packet exposed by the Pecron API and discover all three sensors through its `host_packet_data_jdb` TSL property.

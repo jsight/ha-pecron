@@ -74,6 +74,7 @@ The integration creates the following entities for each device:
 - **Battery Percentage** - Current battery level (%)
 - **Battery Voltage** - Current battery pack voltage (V)
 - **Battery Current** - Signed battery pack charge/discharge current (A)
+- **Battery Power** - Current battery power (W), positive while charging and negative while discharging
 - **Battery Temperature** - Current battery pack temperature (°C)
 - **Input Power** - Total power being drawn from all input sources (W)
 - **AC Input Power** - Power from grid/AC charging (W)

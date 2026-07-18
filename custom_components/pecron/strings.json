@@ -32,6 +32,9 @@
       "battery_percentage": {
         "name": "Battery percentage"
       },
+      "battery_power": {
+        "name": "Battery power"
+      },
       "total_input_power": {
         "name": "Input power"
       },
