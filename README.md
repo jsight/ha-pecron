@@ -5,7 +5,7 @@ A Home Assistant community integration for Pecron portable power stations. Monit
 ## Features
 
 - **Device Control** - Turn AC and DC outputs on/off directly from Home Assistant
-- **Real-time Monitoring** - Battery percentage, input/output power, and device status
+- **Real-time Monitoring** - Battery percentage, voltage, current, temperature, input/output power, and device status
 - **Multi-device Support** - Manage multiple Pecron stations from one account
 - **Smart Entity Discovery** - Automatically creates only the entities your device supports
 - **Advanced Control Service** - `pecron.set_property` for controlling any writable device property
@@ -72,6 +72,9 @@ The integration creates the following entities for each device:
 
 ### Sensors
 - **Battery Percentage** - Current battery level (%)
+- **Battery Voltage** - Current battery pack voltage (V)
+- **Battery Current** - Signed battery pack charge/discharge current (A)
+- **Battery Temperature** - Current battery pack temperature (°C)
 - **Input Power** - Total power being drawn from all input sources (W)
 - **AC Input Power** - Power from grid/AC charging (W)
 - **DC Input Power** - Power from solar/DC input (W)
