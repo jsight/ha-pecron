@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 from dataclasses import dataclass
 from typing import Any
 
@@ -84,6 +85,16 @@ PECRON_SENSORS = [
         icon="mdi:current-dc",
         struct_property="battery_pack",
         struct_field="host_packet_current",
+        tsl_property="host_packet_data_jdb",
+    ),
+    PecronSensorDescription(
+        key="battery_power",
+        name="Battery Power",
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        icon="mdi:battery-charging",
+        struct_property="battery_pack",
         tsl_property="host_packet_data_jdb",
     ),
     PecronSensorDescription(
@@ -297,6 +308,23 @@ class PecronSensor(CoordinatorEntity, SensorEntity):
             return None
 
         props = self.coordinator.data[self._device_key]["properties"]
+
+        # Battery power is derived from the signed current and voltage in the
+        # battery packet. The current sign makes charging positive and
+        # discharging negative.
+        if self.entity_description.key == "battery_power":
+            battery_pack = getattr(props, "battery_pack", None)
+            if not battery_pack or not isinstance(battery_pack, dict):
+                return None
+
+            try:
+                voltage = float(battery_pack["host_packet_voltage"])
+                current = float(battery_pack["host_packet_current"])
+            except (KeyError, TypeError, ValueError):
+                return None
+
+            power = voltage * current
+            return power if math.isfinite(power) else None
 
         # For struct sensors, extract the value from the parent dict
         if self.entity_description.struct_property and self.entity_description.struct_field:
