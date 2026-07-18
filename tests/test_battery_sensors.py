@@ -38,6 +38,7 @@ def test_battery_voltage_sensor_metadata_and_value() -> None:
     assert description.device_class is SensorDeviceClass.VOLTAGE
     assert description.state_class is SensorStateClass.MEASUREMENT
     assert description.native_unit_of_measurement == UnitOfElectricPotential.VOLT
+    assert description.suggested_display_precision == 2
     assert description.tsl_property == "host_packet_data_jdb"
     assert description.struct_property == "battery_pack"
     assert description.struct_field == "host_packet_voltage"
@@ -78,6 +79,7 @@ def test_battery_power_sensor_metadata_and_signed_value(current: str, expected: 
     assert description.device_class is SensorDeviceClass.POWER
     assert description.state_class is SensorStateClass.MEASUREMENT
     assert description.native_unit_of_measurement == UnitOfPower.WATT
+    assert description.suggested_display_precision == 1
     assert description.tsl_property == "host_packet_data_jdb"
     assert description.struct_property == "battery_pack"
 
