@@ -12,7 +12,12 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import UnitOfElectricPotential, UnitOfEnergy, UnitOfFrequency, UnitOfPower, UnitOfTime
+from homeassistant.const import (
+    UnitOfElectricCurrent,
+    UnitOfElectricPotential,
+    UnitOfPower,
+    UnitOfTime,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import (
@@ -20,13 +25,7 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
-from .const import (
-    ATTR_DEVICE_KEY,
-    ATTR_FIRMWARE_VERSION,
-    ATTR_PRODUCT_KEY,
-    ATTR_PRODUCT_NAME,
-    DOMAIN,
-)
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -61,6 +60,20 @@ PECRON_SENSORS = [
         device_class=SensorDeviceClass.BATTERY,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="%",
+    ),
+    PecronSensorDescription(
+        key="battery_voltage",
+        name="Battery Voltage",
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+    ),
+    PecronSensorDescription(
+        key="battery_current",
+        name="Battery Current",
+        device_class=SensorDeviceClass.CURRENT,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
     ),
     PecronSensorDescription(
         key="total_input_power",
@@ -301,8 +314,6 @@ class PecronSensor(CoordinatorEntity, SensorEntity):
             is_idle = input_power == 0 and output_power == 0
             is_charging_only = input_power > 0 and output_power == 0
             is_discharging_only = input_power == 0 and output_power > 0
-            is_ups_mode = input_power > 0 and output_power > 0
-
             # Time to Full logic
             if self.entity_description.key == "remain_charging_time":
                 if is_discharging_only or is_idle:

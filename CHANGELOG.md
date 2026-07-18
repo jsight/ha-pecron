@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Battery Voltage and Current sensors**: Exposes battery voltage in volts and battery current in amperes when supported by the device TSL.
+
 ### Changed
 - Upgraded to unofficial-pecron-api v0.4.1 (adds `eco_onoff_us` as an alternate property code for Eco Silent Mode on some device models)
 
