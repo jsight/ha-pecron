@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 from dataclasses import dataclass
 from typing import Any
 
@@ -12,7 +13,13 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import UnitOfElectricPotential, UnitOfEnergy, UnitOfFrequency, UnitOfPower, UnitOfTime
+from homeassistant.const import (
+    UnitOfElectricCurrent,
+    UnitOfElectricPotential,
+    UnitOfPower,
+    UnitOfTemperature,
+    UnitOfTime,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import (
@@ -20,13 +27,7 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
-from .const import (
-    ATTR_DEVICE_KEY,
-    ATTR_FIRMWARE_VERSION,
-    ATTR_PRODUCT_KEY,
-    ATTR_PRODUCT_NAME,
-    DOMAIN,
-)
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,10 +36,12 @@ _LOGGER = logging.getLogger(__name__)
 class PecronSensorDescription(SensorEntityDescription):
     """Describe a Pecron sensor."""
 
+    icon: str | None = None
     always_create: bool = False  # Bypass TSL filtering
     smart_availability: bool = False  # Use smart logic for availability
     struct_property: str | None = None  # Parent property name if value is inside a STRUCT dict
     struct_field: str | None = None  # Key within the struct dict to extract
+    tsl_property: str | None = None  # TSL property that supplies this sensor's value
 
     def __post_init__(self) -> None:
         """Post init."""
@@ -61,6 +64,51 @@ PECRON_SENSORS = [
         device_class=SensorDeviceClass.BATTERY,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="%",
+    ),
+    PecronSensorDescription(
+        key="battery_voltage",
+        name="Battery Voltage",
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        suggested_display_precision=2,
+        icon="mdi:battery-heart-variant",
+        struct_property="battery_pack",
+        struct_field="host_packet_voltage",
+        tsl_property="host_packet_data_jdb",
+    ),
+    PecronSensorDescription(
+        key="battery_current",
+        name="Battery Current",
+        device_class=SensorDeviceClass.CURRENT,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        icon="mdi:current-dc",
+        struct_property="battery_pack",
+        struct_field="host_packet_current",
+        tsl_property="host_packet_data_jdb",
+    ),
+    PecronSensorDescription(
+        key="battery_power",
+        name="Battery Power",
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        suggested_display_precision=1,
+        icon="mdi:battery-charging",
+        struct_property="battery_pack",
+        tsl_property="host_packet_data_jdb",
+    ),
+    PecronSensorDescription(
+        key="battery_temperature",
+        name="Battery Temperature",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        icon="mdi:thermometer",
+        struct_property="battery_pack",
+        struct_field="host_packet_temp",
+        tsl_property="host_packet_data_jdb",
     ),
     PecronSensorDescription(
         key="total_input_power",
@@ -144,16 +192,16 @@ async def async_setup_entry(
 
             for sensor_desc in PECRON_SENSORS:
                 # Always create sensors marked with always_create flag
-                # Otherwise check both property name and _hm variant (API maps xxx_hm -> xxx)
-                # For struct sensors, also check the TSL code with _data_ infix
-                # (e.g., ac_input -> ac_data_input_hm)
-                tsl_key = sensor_desc.key
-                tsl_key_hm = f"{sensor_desc.key}_hm"
-                tsl_key_data_hm = f"{tsl_key.replace('_input', '_data_input')}_hm" if "_input" in tsl_key else None
-                if (sensor_desc.always_create or
-                    tsl_key in tsl_property_codes or
-                    tsl_key_hm in tsl_property_codes or
-                    (tsl_key_data_hm and tsl_key_data_hm in tsl_property_codes)):
+                # Otherwise check the API property name and common TSL variants.
+                tsl_keys = {
+                    sensor_desc.key,
+                    f"{sensor_desc.key}_hm",
+                    sensor_desc.tsl_property or sensor_desc.key,
+                }
+                if "_input" in sensor_desc.key:
+                    tsl_keys.add(f"{sensor_desc.key.replace('_input', '_data_input')}_hm")
+
+                if sensor_desc.always_create or tsl_property_codes.intersection(tsl_keys):
                     sensors.append(
                         PecronSensor(
                             coordinator,
@@ -164,11 +212,10 @@ async def async_setup_entry(
                     )
                 else:
                     _LOGGER.debug(
-                        "Skipping sensor '%s' for %s - not in TSL (checked '%s' and '%s_hm')",
+                        "Skipping sensor '%s' for %s - not in TSL (checked %s)",
                         sensor_desc.key,
                         device_data["device"].device_name,
-                        sensor_desc.key,
-                        sensor_desc.key,
+                        sorted(tsl_keys),
                     )
         else:
             # Fallback: create all sensors if TSL is not available
@@ -264,6 +311,23 @@ class PecronSensor(CoordinatorEntity, SensorEntity):
 
         props = self.coordinator.data[self._device_key]["properties"]
 
+        # Battery power is derived from the signed current and voltage in the
+        # battery packet. The current sign makes charging positive and
+        # discharging negative.
+        if self.entity_description.key == "battery_power":
+            battery_pack = getattr(props, "battery_pack", None)
+            if not battery_pack or not isinstance(battery_pack, dict):
+                return None
+
+            try:
+                voltage = float(battery_pack["host_packet_voltage"])
+                current = float(battery_pack["host_packet_current"])
+            except (KeyError, TypeError, ValueError):
+                return None
+
+            power = voltage * current
+            return power if math.isfinite(power) else None
+
         # For struct sensors, extract the value from the parent dict
         if self.entity_description.struct_property and self.entity_description.struct_field:
             struct_dict = getattr(props, self.entity_description.struct_property, None)
@@ -301,8 +365,6 @@ class PecronSensor(CoordinatorEntity, SensorEntity):
             is_idle = input_power == 0 and output_power == 0
             is_charging_only = input_power > 0 and output_power == 0
             is_discharging_only = input_power == 0 and output_power > 0
-            is_ups_mode = input_power > 0 and output_power > 0
-
             # Time to Full logic
             if self.entity_description.key == "remain_charging_time":
                 if is_discharging_only or is_idle:
