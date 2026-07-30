@@ -12,14 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Battery voltage defaults to two decimal places and battery power defaults to one decimal place in Home Assistant displays.
-
-### Fixed
-- Read battery voltage, current, and temperature from the nested battery packet exposed by the Pecron API and discover all three sensors through its `host_packet_data_jdb` TSL property.
-
-### Changed
 - Upgraded to unofficial-pecron-api v0.4.1 (adds `eco_onoff_us` as an alternate property code for Eco Silent Mode on some device models)
 
 ### Fixed
+- Read battery voltage, current, and temperature from the nested battery packet exposed by the Pecron API and discover all three sensors through its `host_packet_data_jdb` TSL property.
 - **Crash on setup when no devices are usable or initial fetch fails**: replaced all uses of the removed `hass.components.persistent_notification` accessor with the current `homeassistant.components.persistent_notification.async_create(hass, ...)` API. Previously, any code path that tried to show a persistent notification (no devices found, initial connection failure, invalid/read-only property, failed switch/select control) raised `AttributeError: 'HomeAssistant' object has no attribute 'components'` on modern Home Assistant, aborting integration setup entirely instead of surfacing the intended message (#8)
 
 ## [0.5.0] - 2026-04-10

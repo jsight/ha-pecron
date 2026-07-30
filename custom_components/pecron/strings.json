@@ -32,8 +32,17 @@
       "battery_percentage": {
         "name": "Battery percentage"
       },
+      "battery_voltage": {
+        "name": "Battery voltage"
+      },
+      "battery_current": {
+        "name": "Battery current"
+      },
       "battery_power": {
         "name": "Battery power"
+      },
+      "battery_temperature": {
+        "name": "Battery temperature"
       },
       "total_input_power": {
         "name": "Input power"
