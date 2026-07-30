@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **Crash on setup when no devices are usable or initial fetch fails**: replaced all uses of the removed `hass.components.persistent_notification` accessor with the current `homeassistant.components.persistent_notification.async_create(hass, ...)` API. Previously, any code path that tried to show a persistent notification (no devices found, initial connection failure, invalid/read-only property, failed switch/select control) raised `AttributeError: 'HomeAssistant' object has no attribute 'components'` on modern Home Assistant, aborting integration setup entirely instead of surfacing the intended message (#8)
+
 ## [0.5.0] - 2026-04-10
 
 ### Changed
