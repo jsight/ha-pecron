@@ -8,6 +8,7 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
+from homeassistant.components import persistent_notification
 from homeassistant.components.switch import (
     SwitchDeviceClass,
     SwitchEntity,
@@ -78,7 +79,10 @@ async def async_setup_entry(
             for switch_desc in PECRON_SWITCHES:
                 # Check both the property name and the _hm variant
                 # (API maps ac_switch_hm -> ac_switch in properties)
-                if switch_desc.key in tsl_property_codes or f"{switch_desc.key}_hm" in tsl_property_codes:
+                if (
+                    switch_desc.key in tsl_property_codes
+                    or f"{switch_desc.key}_hm" in tsl_property_codes
+                ):
                     switches.append(
                         PecronSwitch(
                             coordinator,
@@ -219,7 +223,8 @@ class PecronSwitch(CoordinatorEntity, SwitchEntity):
         api = self.coordinator.api
         if api is None:
             _LOGGER.error("API not available for %s", self._attr_name)
-            self.hass.components.persistent_notification.async_create(
+            persistent_notification.async_create(
+                self.hass,
                 f"Failed to control {self._attr_name}: API not initialized",
                 title="Pecron: Control Failed",
                 notification_id=f"{DOMAIN}_control_failed_{self._attr_unique_id}",
@@ -245,9 +250,7 @@ class PecronSwitch(CoordinatorEntity, SwitchEntity):
 
         try:
             # Call the API method in executor
-            result = await self.hass.async_add_executor_job(
-                method, self._device, enabled
-            )
+            result = await self.hass.async_add_executor_job(method, self._device, enabled)
 
             if not result.success:
                 _LOGGER.error(
@@ -259,7 +262,8 @@ class PecronSwitch(CoordinatorEntity, SwitchEntity):
                 # Revert optimistic update on failure
                 self._attr_is_on = old_state
                 self.async_write_ha_state()
-                self.hass.components.persistent_notification.async_create(
+                persistent_notification.async_create(
+                    self.hass,
                     f"Failed to {'turn on' if enabled else 'turn off'} {self._attr_name}: "
                     f"{result.message or 'Unknown error'}",
                     title="Pecron: Control Failed",
@@ -300,7 +304,8 @@ class PecronSwitch(CoordinatorEntity, SwitchEntity):
             # Revert optimistic update on error
             self._attr_is_on = old_state
             self.async_write_ha_state()
-            self.hass.components.persistent_notification.async_create(
+            persistent_notification.async_create(
+                self.hass,
                 f"Error controlling {self._attr_name}: {err}",
                 title="Pecron: Control Error",
                 notification_id=f"{DOMAIN}_control_error_{self._attr_unique_id}",

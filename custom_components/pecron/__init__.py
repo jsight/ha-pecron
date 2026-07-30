@@ -5,6 +5,7 @@ import logging
 from datetime import timedelta
 from typing import Final
 
+from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -42,9 +43,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.data.get(CONF_REFRESH_INTERVAL, DEFAULT_REFRESH_INTERVAL),
     )
 
-    coordinator = PecronDataUpdateCoordinator(
-        hass, email, password, region, refresh_interval
-    )
+    coordinator = PecronDataUpdateCoordinator(hass, email, password, region, refresh_interval)
 
     # Attempt initial refresh with retry logic
     max_retries = 3
@@ -71,7 +70,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     max_retries,
                 )
                 # Show notification about the failure
-                hass.components.persistent_notification.async_create(
+                persistent_notification.async_create(
+                    hass,
                     f"Failed to connect to Pecron API after {max_retries} attempts. "
                     "Please check your internet connection and credentials, then reload the integration.",
                     title="Pecron: Connection Failed",
@@ -82,7 +82,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Show persistent notification if no devices found
     if coordinator.data is not None and not coordinator.data:
-        hass.components.persistent_notification.async_create(
+        persistent_notification.async_create(
+            hass,
             "No Pecron devices found on your account. "
             "Please check that devices are registered in the Pecron mobile app and try reloading the integration.",
             title="Pecron: No Devices Found",
@@ -156,7 +157,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     device.device_name,
                     list(tsl_property_codes.keys()),
                 )
-                hass.components.persistent_notification.async_create(
+                persistent_notification.async_create(
+                    hass,
                     f"Property '{property_code}' is not supported by {device.device_name}. "
                     f"Available properties: {', '.join(sorted(tsl_property_codes.keys()))}",
                     title="Pecron: Invalid Property",
@@ -172,7 +174,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     property_code,
                     device.device_name,
                 )
-                hass.components.persistent_notification.async_create(
+                persistent_notification.async_create(
+                    hass,
                     f"Property '{property_code}' is read-only and cannot be modified.",
                     title="Pecron: Read-Only Property",
                     notification_id=f"{DOMAIN}_readonly_property_{device_key}",
@@ -207,7 +210,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     device.device_name,
                     result.message or "Unknown error",
                 )
-                hass.components.persistent_notification.async_create(
+                persistent_notification.async_create(
+                    hass,
                     f"Failed to set property '{property_code}' on {device.device_name}: "
                     f"{result.message or 'Unknown error'}",
                     title="Pecron: Property Set Failed",
@@ -222,7 +226,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 err,
                 exc_info=True,
             )
-            hass.components.persistent_notification.async_create(
+            persistent_notification.async_create(
+                hass,
                 f"Error setting property '{property_code}' on {device.device_name}: {err}",
                 title="Pecron: Service Error",
                 notification_id=f"{DOMAIN}_set_property_error_{device_key}",
@@ -300,8 +305,13 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
                 last_error = err
                 error_str = str(err).lower()
                 # Differentiate error types for better diagnostics
-                if ("authentication" in error_str or "401" in error_str or "unauthorized" in error_str or
-                    "5032" in error_str or "token" in error_str):
+                if (
+                    "authentication" in error_str
+                    or "401" in error_str
+                    or "unauthorized" in error_str
+                    or "5032" in error_str
+                    or "token" in error_str
+                ):
                     if attempt < max_retries - 1:
                         # Token likely expired - reset API to force re-login on next attempt
                         _LOGGER.warning(
@@ -325,7 +335,9 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
                     _LOGGER.warning("Connection error while communicating with Pecron API: %s", err)
                     raise UpdateFailed(f"Connection error: {err}") from err
                 else:
-                    _LOGGER.error("Unexpected error communicating with Pecron API: %s", err, exc_info=True)
+                    _LOGGER.error(
+                        "Unexpected error communicating with Pecron API: %s", err, exc_info=True
+                    )
                     raise UpdateFailed(f"Error communicating with Pecron API: {err}") from err
 
         # If we exhausted retries without raising, raise the last error
@@ -349,7 +361,10 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
             self.devices = self.api.get_devices()
 
             if is_refresh:
-                _LOGGER.info("Token refreshed successfully. Found %d Pecron device(s) on account", len(self.devices))
+                _LOGGER.info(
+                    "Token refreshed successfully. Found %d Pecron device(s) on account",
+                    len(self.devices),
+                )
             else:
                 _LOGGER.info("Found %d Pecron device(s) on account", len(self.devices))
 
@@ -357,7 +372,7 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
                 _LOGGER.warning(
                     "No Pecron devices found on account %s. "
                     "Please check that devices are registered in the Pecron app.",
-                    self.email
+                    self.email,
                 )
             else:
                 for device in self.devices:
@@ -434,8 +449,13 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
             except Exception as err:
                 error_str = str(err).lower()
                 # Check if this is an authentication error that needs token refresh
-                if ("authentication" in error_str or "401" in error_str or "unauthorized" in error_str or
-                    "5032" in error_str or "token" in error_str):
+                if (
+                    "authentication" in error_str
+                    or "401" in error_str
+                    or "unauthorized" in error_str
+                    or "5032" in error_str
+                    or "token" in error_str
+                ):
                     _LOGGER.warning(
                         "Authentication error fetching properties for %s: %s. Token may have expired.",
                         device.device_name,
@@ -475,11 +495,7 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
         """Get devices that are new since the given set of keys."""
         if not self.data:
             return {}
-        return {
-            key: value
-            for key, value in self.data.items()
-            if key not in existing_keys
-        }
+        return {key: value for key, value in self.data.items() if key not in existing_keys}
 
     async def async_shutdown(self) -> None:
         """Shutdown the coordinator and close API connection."""
