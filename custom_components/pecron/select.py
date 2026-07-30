@@ -8,6 +8,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
+from homeassistant.components import persistent_notification
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -248,7 +249,8 @@ class PecronSelect(CoordinatorEntity, SelectEntity):
         api = self.coordinator.api
         if api is None:
             _LOGGER.error("API not available for %s", self._attr_name)
-            self.hass.components.persistent_notification.async_create(
+            persistent_notification.async_create(
+                self.hass,
                 f"Failed to control {self._attr_name}: API not initialized",
                 title="Pecron: Control Failed",
                 notification_id=f"{DOMAIN}_control_failed_{self._attr_unique_id}",
@@ -275,9 +277,7 @@ class PecronSelect(CoordinatorEntity, SelectEntity):
         self.async_write_ha_state()
 
         try:
-            result = await self.hass.async_add_executor_job(
-                method, self._device, api_value
-            )
+            result = await self.hass.async_add_executor_job(method, self._device, api_value)
 
             if not result.success:
                 _LOGGER.error(
@@ -288,7 +288,8 @@ class PecronSelect(CoordinatorEntity, SelectEntity):
                 )
                 self._attr_current_option = old_option
                 self.async_write_ha_state()
-                self.hass.components.persistent_notification.async_create(
+                persistent_notification.async_create(
+                    self.hass,
                     f"Failed to set {self._attr_name} to {option}: "
                     f"{result.error_message or 'Unknown error'}",
                     title="Pecron: Control Failed",
@@ -315,7 +316,8 @@ class PecronSelect(CoordinatorEntity, SelectEntity):
             )
             self._attr_current_option = old_option
             self.async_write_ha_state()
-            self.hass.components.persistent_notification.async_create(
+            persistent_notification.async_create(
+                self.hass,
                 f"Error controlling {self._attr_name}: {err}",
                 title="Pecron: Control Error",
                 notification_id=f"{DOMAIN}_control_error_{self._attr_unique_id}",
