@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Upgraded to unofficial-pecron-api v0.4.1 (adds `eco_onoff_us` as an alternate property code for Eco Silent Mode on some device models)
+
 ### Fixed
 - **Crash on setup when no devices are usable or initial fetch fails**: replaced all uses of the removed `hass.components.persistent_notification` accessor with the current `homeassistant.components.persistent_notification.async_create(hass, ...)` API. Previously, any code path that tried to show a persistent notification (no devices found, initial connection failure, invalid/read-only property, failed switch/select control) raised `AttributeError: 'HomeAssistant' object has no attribute 'components'` on modern Home Assistant, aborting integration setup entirely instead of surfacing the intended message (#8)
 

@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.11"
 
 [[package]]
@@ -93,7 +93,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "unofficial-pecron-api", specifier = "==0.1.0" }]
+requires-dist = [{ name = "unofficial-pecron-api", specifier = "==0.4.1" }]
 
 [[package]]
 name = "idna"
@@ -151,15 +151,15 @@ wheels = [
 
 [[package]]
 name = "unofficial-pecron-api"
-version = "0.1.0"
+version = "0.4.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pycryptodome" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/88/7c/93c2e23badd188e47897db7b250559910fe0ff3023b95332ba1b381ad474/unofficial_pecron_api-0.1.0.tar.gz", hash = "sha256:a9557eee8f7574f3c97e8d359d0ba640a365ea234931b5b89b23aa1160fa8fa2", size = 10344, upload-time = "2026-02-10T03:49:59.889Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/10/77/dc9040a0d57e044196ed12aec8e5a6e27dd1017c670ed10ced1590f2a726/unofficial_pecron_api-0.4.1.tar.gz", hash = "sha256:70bfcad6f40e55ac47a1ce38969f78f7dcef2f1edfd9cca799de68f8f9605dd0", size = 16131, upload-time = "2026-07-30T23:22:47.924Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0e/94/e58c2eadaf87b4e65ef0135e744e985a5b7486378f8cb72aafee771cb490/unofficial_pecron_api-0.1.0-py3-none-any.whl", hash = "sha256:8d2bab9418a461972b3ccb68dfc43f380f7d2733692c2d5d829857c39b562db9", size = 13864, upload-time = "2026-02-10T03:49:58.912Z" },
+    { url = "https://files.pythonhosted.org/packages/1a/3e/2cb4f2d65ffd8e71a5aa32b6baa1a38463880c525a2b98727a08a3992645/unofficial_pecron_api-0.4.1-py3-none-any.whl", hash = "sha256:2e2bc0714c66a2ba41c963122b176f53f1099b92d479079df48953c1a5bb02f1", size = 20009, upload-time = "2026-07-30T23:22:46.945Z" },
 ]
 
 [[package]]
