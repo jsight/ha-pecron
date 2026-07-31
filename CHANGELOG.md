@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.6.0] - 2026-07-30
 
 ### Added
 - **Battery pack sensors**: Exposes battery voltage in volts, signed battery current in amperes, calculated battery power in watts, and battery temperature in degrees Celsius when supported by the device TSL. Battery power is positive while charging and negative while discharging.
@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Battery voltage defaults to two decimal places and battery power defaults to one decimal place in Home Assistant displays.
 - Upgraded to unofficial-pecron-api v0.4.1 (adds `eco_onoff_us` as an alternate property code for Eco Silent Mode on some device models)
+- Tested and developed against Home Assistant 2026.7.4 (up from 2024.1.0); raised the declared minimum supported version to 2024.11.0
+- `DataUpdateCoordinator` now passes `config_entry` explicitly instead of relying on the deprecated ContextVar lookup, which Home Assistant 2026.8 turns into a hard failure
 
 ### Fixed
 - Read battery voltage, current, and temperature from the nested battery packet exposed by the Pecron API and discover all three sensors through its `host_packet_data_jdb` TSL property.
