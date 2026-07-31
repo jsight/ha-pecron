@@ -18,6 +18,12 @@ def mock_hass():
 
 
 @pytest.fixture
+def mock_config_entry():
+    """Create a mock config entry."""
+    return MagicMock()
+
+
+@pytest.fixture
 def mock_pecron_api():
     """Create a mock PecronAPI."""
     api = MagicMock()
@@ -56,12 +62,12 @@ class TestTokenRefreshDuringDeviceListFetch:
 
     @pytest.mark.asyncio
     async def test_auth_failure_on_initial_fetch_triggers_retry(
-        self, mock_hass, mock_pecron_api, mock_device, mock_properties
+        self, mock_hass, mock_config_entry, mock_pecron_api, mock_device, mock_properties
     ):
         """Test that auth failure during initial device fetch triggers retry."""
         with patch("custom_components.pecron.PecronAPI", return_value=mock_pecron_api):
             coordinator = PecronDataUpdateCoordinator(
-                mock_hass, "test@example.com", "password", "US", 600
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
             )
 
             # First call fails with auth error, second succeeds
@@ -83,7 +89,7 @@ class TestTokenRefreshDuringPropertyFetch:
 
     @pytest.mark.asyncio
     async def test_auth_failure_during_property_fetch_triggers_retry(
-        self, mock_hass, mock_pecron_api, mock_device, mock_properties
+        self, mock_hass, mock_config_entry, mock_pecron_api, mock_device, mock_properties
     ):
         """Test that auth failure during property fetch triggers retry and API reset."""
         call_count = 0
@@ -97,7 +103,7 @@ class TestTokenRefreshDuringPropertyFetch:
 
         with patch("custom_components.pecron.PecronAPI", return_value=mock_pecron_api):
             coordinator = PecronDataUpdateCoordinator(
-                mock_hass, "test@example.com", "password", "US", 600
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
             )
 
             # Setup: initial fetch succeeds
@@ -119,7 +125,7 @@ class TestTokenRefreshDuringPropertyFetch:
 
     @pytest.mark.asyncio
     async def test_error_5032_detected_and_api_reset(
-        self, mock_hass, mock_device, mock_properties
+        self, mock_hass, mock_config_entry, mock_device, mock_properties
     ):
         """Test that error code 5032 is detected, API is reset, and retries work."""
         call_count = 0
@@ -147,7 +153,7 @@ class TestTokenRefreshDuringPropertyFetch:
             mock_api_class.side_effect = create_api
 
             coordinator = PecronDataUpdateCoordinator(
-                mock_hass, "test@example.com", "password", "US", 600
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
             )
 
             # Initial refresh: should fail once with 5032, then retry and succeed
@@ -160,7 +166,7 @@ class TestTokenRefreshDuringPropertyFetch:
 
     @pytest.mark.asyncio
     async def test_token_string_in_error_triggers_reset(
-        self, mock_hass, mock_device, mock_properties
+        self, mock_hass, mock_config_entry, mock_device, mock_properties
     ):
         """Test that 'token' in error message triggers API reset and retry."""
         call_count = 0
@@ -181,7 +187,7 @@ class TestTokenRefreshDuringPropertyFetch:
             mock_api_class.return_value = api
 
             coordinator = PecronDataUpdateCoordinator(
-                mock_hass, "test@example.com", "password", "US", 600
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
             )
 
             # Should detect 'token' and retry successfully
@@ -190,7 +196,7 @@ class TestTokenRefreshDuringPropertyFetch:
 
     @pytest.mark.asyncio
     async def test_authentication_string_triggers_reset(
-        self, mock_hass, mock_device, mock_properties
+        self, mock_hass, mock_config_entry, mock_device, mock_properties
     ):
         """Test that 'authentication' in error message triggers API reset and retry."""
         call_count = 0
@@ -211,7 +217,7 @@ class TestTokenRefreshDuringPropertyFetch:
             mock_api_class.return_value = api
 
             coordinator = PecronDataUpdateCoordinator(
-                mock_hass, "test@example.com", "password", "US", 600
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
             )
 
             await coordinator.async_refresh()
@@ -219,7 +225,7 @@ class TestTokenRefreshDuringPropertyFetch:
 
     @pytest.mark.asyncio
     async def test_401_error_triggers_reset(
-        self, mock_hass, mock_device, mock_properties
+        self, mock_hass, mock_config_entry, mock_device, mock_properties
     ):
         """Test that 401 error code triggers API reset and retry."""
         call_count = 0
@@ -240,7 +246,7 @@ class TestTokenRefreshDuringPropertyFetch:
             mock_api_class.return_value = api
 
             coordinator = PecronDataUpdateCoordinator(
-                mock_hass, "test@example.com", "password", "US", 600
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
             )
 
             await coordinator.async_refresh()
@@ -248,7 +254,7 @@ class TestTokenRefreshDuringPropertyFetch:
 
     @pytest.mark.asyncio
     async def test_unauthorized_string_triggers_reset(
-        self, mock_hass, mock_device, mock_properties
+        self, mock_hass, mock_config_entry, mock_device, mock_properties
     ):
         """Test that 'unauthorized' in error message triggers API reset and retry."""
         call_count = 0
@@ -269,7 +275,7 @@ class TestTokenRefreshDuringPropertyFetch:
             mock_api_class.return_value = api
 
             coordinator = PecronDataUpdateCoordinator(
-                mock_hass, "test@example.com", "password", "US", 600
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
             )
 
             await coordinator.async_refresh()
@@ -281,12 +287,12 @@ class TestNonAuthErrorsDontTriggerReset:
 
     @pytest.mark.asyncio
     async def test_connection_error_does_not_reset_api(
-        self, mock_hass, mock_pecron_api, mock_device, mock_properties
+        self, mock_hass, mock_config_entry, mock_pecron_api, mock_device, mock_properties
     ):
         """Test that connection errors don't reset API."""
         with patch("custom_components.pecron.PecronAPI", return_value=mock_pecron_api):
             coordinator = PecronDataUpdateCoordinator(
-                mock_hass, "test@example.com", "password", "US", 600
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
             )
 
             mock_pecron_api.get_devices.return_value = [mock_device]
@@ -295,9 +301,7 @@ class TestNonAuthErrorsDontTriggerReset:
             original_api = coordinator.api
 
             # Property fetch fails with connection error (non-auth)
-            mock_pecron_api.get_device_properties.side_effect = Exception(
-                "Connection timeout"
-            )
+            mock_pecron_api.get_device_properties.side_effect = Exception("Connection timeout")
 
             # Should not raise (error is caught and logged for individual device)
             await coordinator.async_refresh()
@@ -307,12 +311,12 @@ class TestNonAuthErrorsDontTriggerReset:
 
     @pytest.mark.asyncio
     async def test_generic_error_does_not_reset_api(
-        self, mock_hass, mock_pecron_api, mock_device, mock_properties
+        self, mock_hass, mock_config_entry, mock_pecron_api, mock_device, mock_properties
     ):
         """Test that generic errors don't reset API."""
         with patch("custom_components.pecron.PecronAPI", return_value=mock_pecron_api):
             coordinator = PecronDataUpdateCoordinator(
-                mock_hass, "test@example.com", "password", "US", 600
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
             )
 
             mock_pecron_api.get_devices.return_value = [mock_device]
@@ -320,9 +324,7 @@ class TestNonAuthErrorsDontTriggerReset:
 
             original_api = coordinator.api
 
-            mock_pecron_api.get_device_properties.side_effect = Exception(
-                "Something went wrong"
-            )
+            mock_pecron_api.get_device_properties.side_effect = Exception("Something went wrong")
 
             await coordinator.async_refresh()
 
@@ -335,7 +337,7 @@ class TestPartialSuccessScenarios:
 
     @pytest.mark.asyncio
     async def test_auth_error_on_first_device_stops_processing(
-        self, mock_hass, mock_properties
+        self, mock_hass, mock_config_entry, mock_properties
     ):
         """Test that auth error on first device triggers retry and processes both devices."""
         device1 = MagicMock()
@@ -367,7 +369,7 @@ class TestPartialSuccessScenarios:
             mock_api_class.return_value = api
 
             coordinator = PecronDataUpdateCoordinator(
-                mock_hass, "test@example.com", "password", "US", 600
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
             )
 
             # Auth error on first device should trigger retry, then process both devices
@@ -381,20 +383,17 @@ class TestRetryLogic:
     """Test the retry logic in _async_update_data."""
 
     @pytest.mark.asyncio
-    async def test_max_retries_respected(
-        self, mock_hass, mock_device
-    ):
+    async def test_max_retries_respected(self, mock_hass, mock_config_entry, mock_device):
         """Test that max retries (2) is respected when auth keeps failing."""
         api_instances = []
 
         with patch("custom_components.pecron.PecronAPI") as mock_api_class:
+
             def create_api(*args, **kwargs):
                 api = MagicMock()
                 api.login = MagicMock()
                 # Always fail with auth error
-                api.get_devices.side_effect = PecronAPIError(
-                    "Token validation failed", code=5032
-                )
+                api.get_devices.side_effect = PecronAPIError("Token validation failed", code=5032)
                 api.get_product_tsl.return_value = []
                 api_instances.append(api)
                 return api
@@ -402,7 +401,7 @@ class TestRetryLogic:
             mock_api_class.side_effect = create_api
 
             coordinator = PecronDataUpdateCoordinator(
-                mock_hass, "test@example.com", "password", "US", 600
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
             )
 
             # All attempts fail with auth error, should exhaust retries
@@ -417,7 +416,7 @@ class TestRetryLogic:
 
     @pytest.mark.asyncio
     async def test_successful_retry_after_auth_failure(
-        self, mock_hass, mock_device, mock_properties
+        self, mock_hass, mock_config_entry, mock_device, mock_properties
     ):
         """Test successful retry after initial auth failure."""
         call_count = 0
@@ -438,7 +437,7 @@ class TestRetryLogic:
             mock_api_class.return_value = mock_api
 
             coordinator = PecronDataUpdateCoordinator(
-                mock_hass, "test@example.com", "password", "US", 600
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
             )
 
             # First attempt fails, second succeeds
@@ -454,7 +453,7 @@ class TestCaseInsensitiveErrorDetection:
 
     @pytest.mark.asyncio
     async def test_uppercase_token_detected(
-        self, mock_hass, mock_device, mock_properties
+        self, mock_hass, mock_config_entry, mock_device, mock_properties
     ):
         """Test that 'TOKEN' (uppercase) is detected."""
         call_count = 0
@@ -475,7 +474,7 @@ class TestCaseInsensitiveErrorDetection:
             mock_api_class.return_value = api
 
             coordinator = PecronDataUpdateCoordinator(
-                mock_hass, "test@example.com", "password", "US", 600
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
             )
 
             # Should detect 'TOKEN' (case-insensitive) and retry
@@ -484,7 +483,7 @@ class TestCaseInsensitiveErrorDetection:
 
     @pytest.mark.asyncio
     async def test_mixed_case_authentication_detected(
-        self, mock_hass, mock_device, mock_properties
+        self, mock_hass, mock_config_entry, mock_device, mock_properties
     ):
         """Test that 'Authentication' (mixed case) is detected."""
         call_count = 0
@@ -505,7 +504,7 @@ class TestCaseInsensitiveErrorDetection:
             mock_api_class.return_value = api
 
             coordinator = PecronDataUpdateCoordinator(
-                mock_hass, "test@example.com", "password", "US", 600
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
             )
 
             # Should detect 'Authentication' (case-insensitive) and retry
@@ -518,12 +517,13 @@ class TestAPIReinitialization:
 
     @pytest.mark.asyncio
     async def test_api_reinitialized_after_reset(
-        self, mock_hass, mock_device, mock_properties
+        self, mock_hass, mock_config_entry, mock_device, mock_properties
     ):
         """Test that setting api=None triggers fresh login on next fetch."""
         login_calls = []
 
         with patch("custom_components.pecron.PecronAPI") as mock_api_class:
+
             def create_api(*args, **kwargs):
                 api = MagicMock()
                 api.login = MagicMock(side_effect=lambda *a: login_calls.append(a))
@@ -535,7 +535,7 @@ class TestAPIReinitialization:
             mock_api_class.side_effect = create_api
 
             coordinator = PecronDataUpdateCoordinator(
-                mock_hass, "test@example.com", "password", "US", 600
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
             )
 
             # First refresh
@@ -551,12 +551,12 @@ class TestAPIReinitialization:
 
     @pytest.mark.asyncio
     async def test_token_refresh_logged(
-        self, mock_hass, mock_pecron_api, mock_device, mock_properties
+        self, mock_hass, mock_config_entry, mock_pecron_api, mock_device, mock_properties
     ):
         """Test that token refresh is logged appropriately."""
         with patch("custom_components.pecron.PecronAPI", return_value=mock_pecron_api):
             coordinator = PecronDataUpdateCoordinator(
-                mock_hass, "test@example.com", "password", "US", 600
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
             )
 
             mock_pecron_api.get_devices.return_value = [mock_device]
