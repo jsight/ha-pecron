@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **Misleading `cannot_connect` error on login (#6)**: wrong-region login failures were being classified as a generic connection error instead of an authentication error. Each Pecron region signs login requests with a different secret, so selecting the wrong region rejects the login identically to a wrong password — but the message told users to check their internet connection instead of suggesting they try another region. The config flow now uses the API library's typed `AuthenticationError` instead of fragile string matching, and the `invalid_auth` message now mentions region as a possible cause.
+
 ## [0.6.0] - 2026-07-30
 
 ### Added

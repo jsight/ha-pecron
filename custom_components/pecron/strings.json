@@ -19,8 +19,8 @@
       }
     },
     "error": {
-      "invalid_auth": "Invalid email or password",
-      "cannot_connect": "Failed to connect to Pecron API",
+      "invalid_auth": "Invalid email or password, or wrong region selected. Each region uses a different login server, so a correct email/password can still be rejected if your account is registered in a different region. If you're sure your credentials are correct, try a different region.",
+      "cannot_connect": "Failed to reach the Pecron API server. Check your internet connection and try again.",
       "unknown": "An unknown error occurred"
     },
     "abort": {
