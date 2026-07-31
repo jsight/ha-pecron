@@ -43,7 +43,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.data.get(CONF_REFRESH_INTERVAL, DEFAULT_REFRESH_INTERVAL),
     )
 
-    coordinator = PecronDataUpdateCoordinator(hass, email, password, region, refresh_interval)
+    coordinator = PecronDataUpdateCoordinator(
+        hass, entry, email, password, region, refresh_interval
+    )
 
     # Attempt initial refresh with retry logic
     max_retries = 3
@@ -273,6 +275,7 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
     def __init__(
         self,
         hass: HomeAssistant,
+        config_entry: ConfigEntry,
         email: str,
         password: str,
         region: str,
@@ -289,6 +292,7 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=config_entry,
             name=DOMAIN,
             update_interval=timedelta(seconds=refresh_interval),
         )
