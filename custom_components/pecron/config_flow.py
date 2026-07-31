@@ -3,12 +3,13 @@
 import logging
 from typing import Any
 
+import requests
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 from unofficial_pecron_api import PecronAPI
+from unofficial_pecron_api.exceptions import AuthenticationError
 
 from .const import (
     CONF_EMAIL,
@@ -34,9 +35,7 @@ class PecronConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Get the options flow for this handler."""
         return PecronOptionsFlow()
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Handle the initial step."""
         if self._async_current_entries():
             return self.async_abort(reason="already_configured")
@@ -71,15 +70,13 @@ class PecronConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_EMAIL): str,
                 vol.Required(CONF_PASSWORD): str,
                 vol.Optional(CONF_REGION, default=DEFAULT_REGION): vol.In(REGIONS),
-                vol.Optional(
-                    CONF_REFRESH_INTERVAL, default=DEFAULT_REFRESH_INTERVAL
-                ): vol.All(vol.Coerce(int), vol.Range(min=60, max=3600)),
+                vol.Optional(CONF_REFRESH_INTERVAL, default=DEFAULT_REFRESH_INTERVAL): vol.All(
+                    vol.Coerce(int), vol.Range(min=60, max=3600)
+                ),
             }
         )
 
-        return self.async_show_form(
-            step_id="user", data_schema=data_schema, errors=errors
-        )
+        return self.async_show_form(step_id="user", data_schema=data_schema, errors=errors)
 
     async def async_step_import(self, import_data: dict[str, Any]) -> FlowResult:
         """Import configuration from YAML."""
@@ -87,27 +84,34 @@ class PecronConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     def _validate_pecron_credentials(email: str, password: str, region: str) -> None:
-        """Validate Pecron credentials."""
+        """Validate Pecron credentials.
+
+        The login endpoint rejects a request with an ``AuthenticationError``
+        both for a wrong password and for a wrong region: each region signs
+        requests with a different secret, so picking the wrong region looks
+        identical to bad credentials from the API's point of view. Surface
+        both as ``invalid_auth`` (with a region hint in the error string)
+        rather than the generic ``cannot_connect``, which previously misled
+        users into thinking it was a network problem. See GH#6.
+        """
         try:
             api = PecronAPI(region=region)
             api.login(email, password)
             devices = api.get_devices()
             api.close()
-
-            if not devices:
-                raise PecronAuthError("No devices found on account")
-        except Exception as err:
-            if "authentication" in str(err).lower() or "401" in str(err):
-                raise PecronAuthError(str(err)) from err
+        except AuthenticationError as err:
+            raise PecronAuthError(str(err)) from err
+        except requests.exceptions.RequestException as err:
             raise PecronConnectionError(str(err)) from err
+
+        if not devices:
+            raise PecronAuthError("No devices found on account")
 
 
 class PecronOptionsFlow(config_entries.OptionsFlow):
     """Handle options flow for Pecron integration."""
 
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Manage the options."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
