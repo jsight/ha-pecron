@@ -9,7 +9,7 @@ A Home Assistant community integration for Pecron portable power stations. Monit
 - **Multi-device Support** - Manage multiple Pecron stations from one account
 - **Smart Entity Discovery** - Automatically creates only the entities your device supports
 - **Advanced Control Service** - `pecron.set_property` for controlling any writable device property
-- **Configurable Refresh Rate** - Adjust polling interval (1-60 minutes)
+- **Configurable Refresh Rate** - Adjust polling interval (1-60 minutes; fractional minutes are supported)
 - **Multi-region Support** - US, EU, and CN regions
 - **Automation Ready** - Create complex automations based on battery level, power usage, etc.
 

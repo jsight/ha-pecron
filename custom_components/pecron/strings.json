@@ -7,14 +7,8 @@
         "data": {
           "email": "Email",
           "password": "Password",
-          "region": "Region"
-        }
-      },
-      "advanced": {
-        "title": "Advanced Options",
-        "description": "Configure polling and other advanced settings",
-        "data": {
-          "refresh_interval": "Refresh interval (seconds)"
+          "region": "Region",
+          "refresh_interval": "Refresh interval (minutes)"
         }
       }
     },
@@ -25,6 +19,15 @@
     },
     "abort": {
       "already_configured": "Pecron is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "refresh_interval": "Refresh interval (minutes)"
+        }
+      }
     }
   },
   "entity": {
