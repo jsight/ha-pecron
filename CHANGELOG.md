@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-11-27
+
+### Fixed
+- Refresh the Pecron device list on each coordinator poll so the Online entity reflects the latest `onlineStatus` value, including when a device property request fails.
+
 ## [0.6.2] - 2026-11-27
 
 ### Fixed

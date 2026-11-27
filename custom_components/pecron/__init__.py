@@ -357,6 +357,7 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
 
     def _fetch_data(self) -> dict:
         """Fetch device data from API."""
+        initializing = self.api is None
         if self.api is None:
             # Check if this is a re-initialization (token refresh) or initial setup
             is_refresh = len(self.devices) > 0
@@ -367,8 +368,20 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
 
             self.api = PecronAPI(region=self.region)
             self.api.login(self.email, self.password)
-            self.devices = self.api.get_devices()
 
+        # Refresh the device list on every poll so onlineStatus stays current.
+        # The properties endpoint can succeed while the device-list status is stale.
+        previous_device_keys = {device.device_key for device in self.devices}
+        self.devices = self.api.get_devices()
+        _LOGGER.debug("Refreshed Pecron device list: %d device(s)", len(self.devices))
+        for device in self.devices:
+            _LOGGER.debug(
+                "Device %s online status from device list: %s",
+                device.device_name,
+                device.online,
+            )
+
+        if initializing:
             if is_refresh:
                 _LOGGER.info(
                     "Token refreshed successfully. Found %d Pecron device(s) on account",
@@ -391,6 +404,17 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
                         device.device_key,
                         getattr(device, "product_name", "unknown"),
                     )
+        else:
+            new_devices = [
+                device for device in self.devices if device.device_key not in previous_device_keys
+            ]
+            for device in new_devices:
+                _LOGGER.info(
+                    "Discovered new device: %s (key: %s, product: %s)",
+                    device.device_name,
+                    device.device_key,
+                    getattr(device, "product_name", "unknown"),
+                )
 
         data = {}
         for device in self.devices:
@@ -483,6 +507,13 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
                         err,
                         exc_info=True,
                     )
+                    # Keep the freshly fetched device status available even if its
+                    # property request failed, so the Online entity can still update.
+                    data[device.device_key] = {
+                        "device": device,
+                        "properties": None,
+                        "tsl": None,
+                    }
 
         if data:
             _LOGGER.debug("Successfully fetched data for %d device(s)", len(data))
