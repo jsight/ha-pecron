@@ -12,3 +12,5 @@ build/
 *.swo
 *~
 .DS_Store
+
+.coverage
