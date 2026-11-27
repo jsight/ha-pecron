@@ -164,6 +164,7 @@ class TestTokenRefreshDuringPropertyFetch:
             # API instance created multiple times due to reset
             assert len(api_instances) >= 2
 
+
     @pytest.mark.asyncio
     async def test_token_string_in_error_triggers_reset(
         self, mock_hass, mock_config_entry, mock_device, mock_properties
@@ -280,6 +281,57 @@ class TestTokenRefreshDuringPropertyFetch:
 
             await coordinator.async_refresh()
             assert call_count == 2
+
+
+class TestDeviceOnlineStatusRefresh:
+    """Test online state is refreshed from the device-list API on every poll."""
+
+    @pytest.mark.asyncio
+    async def test_online_status_updates_on_subsequent_poll(
+        self, mock_hass, mock_config_entry, mock_pecron_api, mock_device, mock_properties
+    ):
+        """A device coming online is reflected without reinitializing the API client."""
+        mock_device.online = False
+        online_device = MagicMock()
+        online_device.device_key = mock_device.device_key
+        online_device.device_name = mock_device.device_name
+        online_device.product_name = mock_device.product_name
+        online_device.online = True
+
+        mock_pecron_api.get_devices.side_effect = [[mock_device], [online_device]]
+        mock_pecron_api.get_device_properties.return_value = mock_properties
+
+        with patch("custom_components.pecron.PecronAPI", return_value=mock_pecron_api):
+            coordinator = PecronDataUpdateCoordinator(
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
+            )
+
+            await coordinator.async_refresh()
+            assert coordinator.data[mock_device.device_key]["device"].online is False
+
+            await coordinator.async_refresh()
+            assert coordinator.data[mock_device.device_key]["device"].online is True
+            assert mock_pecron_api.get_devices.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_online_status_survives_property_fetch_failure(
+        self, mock_hass, mock_config_entry, mock_pecron_api, mock_device
+    ):
+        """The Online entity can update when property data for an offline device is unavailable."""
+        mock_device.online = False
+        mock_pecron_api.get_devices.return_value = [mock_device]
+        mock_pecron_api.get_device_properties.side_effect = Exception("Device is offline")
+
+        with patch("custom_components.pecron.PecronAPI", return_value=mock_pecron_api):
+            coordinator = PecronDataUpdateCoordinator(
+                mock_hass, mock_config_entry, "test@example.com", "password", "US", 600
+            )
+
+            await coordinator.async_refresh()
+
+            device_data = coordinator.data[mock_device.device_key]
+            assert device_data["device"].online is False
+            assert device_data["properties"] is None
 
 
 class TestNonAuthErrorsDontTriggerReset:
