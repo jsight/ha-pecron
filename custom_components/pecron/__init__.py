@@ -7,7 +7,6 @@ from typing import Final
 
 from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -288,6 +287,11 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
         self.api: PecronAPI | None = None
         self.devices = []
         self.known_device_keys: set[str] = set()  # Track devices we've seen
+        _LOGGER.debug(
+            "Configured Pecron refresh interval: %d seconds (%.2f minutes)",
+            refresh_interval,
+            refresh_interval / 60,
+        )
 
         super().__init__(
             hass,
@@ -299,6 +303,7 @@ class PecronDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> dict:
         """Fetch data from Pecron API."""
+        _LOGGER.debug("Refreshing device data from the Pecron cloud API")
         max_retries = 2
         last_error = None
 

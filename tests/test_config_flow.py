@@ -10,6 +10,8 @@ from custom_components.pecron.config_flow import (
     PecronAuthError,
     PecronConfigFlow,
     PecronConnectionError,
+    _minutes_to_seconds,
+    _seconds_to_minutes,
 )
 from custom_components.pecron.const import (
     DEFAULT_REGION,
@@ -38,8 +40,18 @@ def test_config_flow_imports() -> None:
         from custom_components.pecron import config_flow
 
         assert config_flow is not None
-    except ImportError:
-        assert False, "config_flow module could not be imported"
+    except ImportError as err:
+        raise AssertionError("config_flow module could not be imported") from err
+
+
+@pytest.mark.parametrize(
+    ("minutes", "seconds"),
+    [(1, 60), (61 / 60, 61), (1.5, 90), (10, 600), (60, 3600)],
+)
+def test_refresh_interval_unit_conversions(minutes: float, seconds: int) -> None:
+    """User-facing minute values round-trip through the seconds stored by the integration."""
+    assert _minutes_to_seconds(minutes) == seconds
+    assert _seconds_to_minutes(seconds) == minutes
 
 
 class TestValidatePecronCredentials:

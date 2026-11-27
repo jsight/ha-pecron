@@ -25,6 +25,16 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
+def _minutes_to_seconds(minutes: int | float) -> int:
+    """Convert a user-facing refresh interval in minutes to seconds."""
+    return round(minutes * 60)
+
+
+def _seconds_to_minutes(seconds: int) -> float:
+    """Convert a stored refresh interval in seconds to minutes."""
+    return seconds / 60
+
+
 class PecronConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Pecron."""
 
@@ -60,9 +70,13 @@ class PecronConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected error: %s", err)
                 errors["base"] = "unknown"
             else:
+                entry_data = dict(user_input)
+                entry_data[CONF_REFRESH_INTERVAL] = _minutes_to_seconds(
+                    entry_data.get(CONF_REFRESH_INTERVAL, DEFAULT_REFRESH_INTERVAL / 60)
+                )
                 return self.async_create_entry(
                     title=user_input[CONF_EMAIL],
-                    data=user_input,
+                    data=entry_data,
                 )
 
         data_schema = vol.Schema(
@@ -70,8 +84,11 @@ class PecronConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_EMAIL): str,
                 vol.Required(CONF_PASSWORD): str,
                 vol.Optional(CONF_REGION, default=DEFAULT_REGION): vol.In(REGIONS),
-                vol.Optional(CONF_REFRESH_INTERVAL, default=DEFAULT_REFRESH_INTERVAL): vol.All(
-                    vol.Coerce(int), vol.Range(min=60, max=3600)
+                vol.Optional(
+                    CONF_REFRESH_INTERVAL,
+                    default=DEFAULT_REFRESH_INTERVAL / 60,
+                ): vol.All(
+                    vol.Coerce(float), vol.Range(min=1, max=60)
                 ),
             }
         )
@@ -80,6 +97,12 @@ class PecronConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_import(self, import_data: dict[str, Any]) -> FlowResult:
         """Import configuration from YAML."""
+        import_data = dict(import_data)
+        if CONF_REFRESH_INTERVAL in import_data:
+            # Older imports used the integration's internal unit: seconds.
+            import_data[CONF_REFRESH_INTERVAL] = _seconds_to_minutes(
+                int(import_data[CONF_REFRESH_INTERVAL])
+            )
         return await self.async_step_user(import_data)
 
     @staticmethod
@@ -113,20 +136,25 @@ class PecronOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Manage the options."""
-        if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
-
         current_refresh = self.config_entry.options.get(
             CONF_REFRESH_INTERVAL,
             self.config_entry.data.get(CONF_REFRESH_INTERVAL, DEFAULT_REFRESH_INTERVAL),
         )
+        current_refresh_minutes = _seconds_to_minutes(current_refresh)
+
+        if user_input is not None:
+            options_data = dict(user_input)
+            options_data[CONF_REFRESH_INTERVAL] = _minutes_to_seconds(
+                options_data.get(CONF_REFRESH_INTERVAL, current_refresh_minutes)
+            )
+            return self.async_create_entry(title="", data=options_data)
 
         options_schema = vol.Schema(
             {
                 vol.Optional(
                     CONF_REFRESH_INTERVAL,
-                    default=current_refresh,
-                ): vol.All(vol.Coerce(int), vol.Range(min=60, max=3600)),
+                    default=current_refresh_minutes,
+                ): vol.All(vol.Coerce(float), vol.Range(min=1, max=60)),
             }
         )
 
